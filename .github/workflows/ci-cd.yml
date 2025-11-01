@@ -2,7 +2,7 @@ name: Next.js CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, tests, 'feature/*']
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
