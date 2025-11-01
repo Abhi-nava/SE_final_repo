@@ -17,7 +17,7 @@ import {
   Line,
 } from "recharts"
 import { TrendingUp, Users, Store, Bike } from "lucide-react"
-import { adminAPI } from "@/lib/api"
+// import { adminAPI } from "@/lib/api"
 
 interface Analytics {
   total_orders: number

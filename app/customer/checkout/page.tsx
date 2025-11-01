@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { ordersAPI } from "@/lib/api"
+// import { ordersAPI } from "@/lib/api"
 import { CreditCard, UtensilsCrossed, ArrowLeft, User, Phone, MapPin } from "lucide-react"
 import Link from "next/link"
 

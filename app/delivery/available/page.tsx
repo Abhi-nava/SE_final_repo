@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { deliveryAPI } from "@/lib/api"
+// import { deliveryAPI } from "@/lib/api"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"

@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { customersAPI } from "@/lib/api"
+// import { customersAPI } from "@/lib/api"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
