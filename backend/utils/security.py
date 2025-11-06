@@ -3,6 +3,7 @@ from jwt import encode, decode, ExpiredSignatureError, InvalidTokenError
 from datetime import datetime, timedelta, timezone
 from config import settings
 from typing import Optional, Dict, Any
+import os
 import hashlib
 
 # Password hashing

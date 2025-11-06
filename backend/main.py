@@ -9,44 +9,49 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from typing import Optional
 import logging
 
-from routes import auth
+# Import routers
+from routes import auth, customers, orders, restaurants
 load_dotenv()
 
-
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
+# MongoDB connection
 MONGO_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "FoodHub-SE-MiniProj")
-print(f"[DEBUG] Using MongoDB URL: {MONGO_URL}, Database: {DATABASE_NAME}")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "food_delivery")
 
 db_client: Optional[AsyncIOMotorClient] = None
 db: Optional[AsyncIOMotorDatabase] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup
     global db_client, db
     db_client = AsyncIOMotorClient(MONGO_URL)
     db = db_client[DATABASE_NAME]
     
+    # Create indexes
     try:
+        # Users collection indexes
         await db.users.create_index("email", unique=True)
         await db.users.create_index("phone", unique=True)
-
+        
+        # Restaurants collection indexes
         await db.restaurants.create_index("owner_id")
         await db.restaurants.create_index("location")
         
-
+        # Orders collection indexes
         await db.orders.create_index("customer_id")
         await db.orders.create_index("restaurant_id")
         await db.orders.create_index("delivery_agent_id")
         await db.orders.create_index("status")
         await db.orders.create_index("created_at", expireAfterSeconds=2592000)  # 30 days TTL
         
-
+        # Menu items indexes
         await db.menu_items.create_index("restaurant_id")
-
+        
+        # Ratings indexes
         await db.ratings.create_index("order_id")
         await db.ratings.create_index("rated_restaurant")
         await db.ratings.create_index("rated_delivery_agent")
@@ -57,6 +62,7 @@ async def lifespan(app: FastAPI):
     
     yield
     
+    # Shutdown
     if db_client:
         db_client.close()
 
@@ -66,11 +72,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-
+# Configure CORS origins and trusted hosts (include both localhost and 127.0.0.1 by default)
 _cors_env = os.getenv("CORS_ORIGINS")
 if _cors_env:
     _allow_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
 else:
+    # Include both hostname and 127.0.0.1 which browsers commonly use during dev
     _allow_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 app.add_middleware(
@@ -97,24 +104,21 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-# app.include_router(customers.router, prefix="/api/customers", tags=["Customers"])
-# app.include_router(restaurants.router, prefix="/api/restaurants", tags=["Restaurants"])
-# app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
-# app.include_router(delivery.router, prefix="/api/delivery", tags=["Delivery"])
-# app.include_router(ratings.router, prefix="/api/ratings", tags=["Ratings"])
-# app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])  # Added admin router
-# app.include_router(websocket.router, tags=["WebSocket"])
+app.include_router(customers.router, prefix="/api/customers", tags=["Customers"])
+app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
+app.include_router(restaurants.router, prefix="/api/restaurants", tags=["Restaurants"])
 
-# print("\n[DEBUG] Registered routes:")
-# for route in app.routes:
-#     if hasattr(route, 'methods') and hasattr(route, 'path'):
-#         print(f"  {route.methods} {route.path}")
-# print("\n")
 
-# @app.get("/health")
-# async def health_check():
-#     """Health check endpoint"""
-#     return {"status": "healthy", "service": "Food Delivery API"}
+print("\n[DEBUG] Registered routes:")
+for route in app.routes:
+    if hasattr(route, 'methods') and hasattr(route, 'path'):
+        print(f"  {route.methods} {route.path}")
+print("\n")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "Food Delivery API"}
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
