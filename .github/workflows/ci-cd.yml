@@ -190,7 +190,7 @@ jobs:
 
       - name: Generate backend coverage report
         if: steps.check-tests.outputs.HAS_TESTS == 'true'
-        working-directory: ./backend
+        working-directory: ./
         run: |
           mkdir -p ../reports/coverage ../reports/junit
           pytest tests/ \
