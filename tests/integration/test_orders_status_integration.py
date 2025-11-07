@@ -1,8 +1,9 @@
 import pytest
 
 
-def test_restaurant_order_status_happy_path(client):
-    resp = client.put(
+@pytest.mark.asyncio
+async def test_restaurant_order_status_happy_path(async_client):
+    resp = await async_client.put(
         "/api/orders/restaurant/order/order1/status",
         json={"order_status": "searching"}
     )
@@ -11,8 +12,9 @@ def test_restaurant_order_status_happy_path(client):
     assert body.get("message") == "Order status updated to searching"
 
 
-def test_restaurant_order_status_invalid_value(client):
-    resp = client.put(
+@pytest.mark.asyncio
+async def test_restaurant_order_status_invalid_value(async_client):
+    resp = await async_client.put(
         "/api/orders/restaurant/order/order1/status",
         json={"order_status": "invalid-status"}
     )

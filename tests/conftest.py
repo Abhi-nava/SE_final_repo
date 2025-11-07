@@ -2,7 +2,7 @@ import asyncio
 import sys
 from pathlib import Path
 import pytest
-from fastapi.testclient import TestClient
+import httpx
 
 # Ensure project root is on sys.path so `import backend` works and `from routes` resolves
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -140,7 +140,7 @@ def override_dependencies(monkeypatch, seed_data):
     yield
 
 @pytest.fixture
-def client(monkeypatch):
+async def async_client(monkeypatch):
     # Build a minimal app that only mounts orders router
     app = FastAPI()
 
@@ -149,4 +149,6 @@ def client(monkeypatch):
 
     app.include_router(orders_router.router, prefix="/api/orders")
 
-    return TestClient(app)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        yield client
