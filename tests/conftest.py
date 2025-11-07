@@ -2,6 +2,7 @@ import asyncio
 import sys
 from pathlib import Path
 import pytest
+import pytest_asyncio
 import httpx
 
 # Ensure project root is on sys.path so `import backend` works and `from routes` resolves
@@ -139,7 +140,7 @@ def override_dependencies(monkeypatch, seed_data):
 
     yield
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_client(monkeypatch):
     # Build a minimal app that only mounts orders router
     app = FastAPI()
