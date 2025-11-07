@@ -96,7 +96,6 @@ jobs:
           echo "✅ Frontend build completed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Backend dependencies installed" >> $GITHUB_STEP_SUMMARY
 
-
   # 🧪 2️⃣ Test
   test:
     name: Test
