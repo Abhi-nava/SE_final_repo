@@ -2,7 +2,7 @@ name: Full Stack CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, tests, 'feature/*']
+    branches: [main, develop, tests, 'feature/*', 'FD-F-042']
   pull_request:
     branches: [main, develop]
 
