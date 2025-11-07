@@ -1,8 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from models.order import OrderCreate, OrderResponse, OrderStatusUpdate, OrderStatus
 from utils.dependencies import get_current_user_http, get_current_restaurant_owner, get_current_customer
-from utils.notifications import NotificationService, NotificationType
-from utils.payment import PaymentService
 from database import db
 
 from bson import ObjectId
@@ -797,6 +795,11 @@ async def update_order_status(
         )
     
     restaurant = await db.restaurants.find_one({"owner_id": ObjectId(current_user["_id"])})
+    if not restaurant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Restaurant not found"
+        )
     if order["restaurant_id"] != ObjectId(restaurant["_id"]):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
