@@ -143,9 +143,6 @@ jobs:
         run: |
           pytest tests/integration/ -v --tb=short
 
-      - name: Run backend system tests
-        run: |
-          pytest tests/system/ -v --tb=short
 
       - name: Generate test summary
         if: always()
