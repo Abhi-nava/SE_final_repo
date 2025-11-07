@@ -10,7 +10,7 @@ from typing import Optional
 import logging
 
 # Import routers
-from routes import auth, customers, orders, delivery, admin
+from routes import auth, customers, orders
 load_dotenv()
 
 # Configure logging
@@ -106,8 +106,6 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(customers.router, prefix="/api/customers", tags=["Customers"])
 app.include_router(orders.router, prefix="/api/orders", tags=["Orders"])
-app.include_router(delivery.router, prefix="/api/delivery", tags=["Delivery"])
-app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])  # Added admin router
 
 print("\n[DEBUG] Registered routes:")
 for route in app.routes:
