@@ -83,7 +83,7 @@ jobs:
           echo "Backend files:"
           ls -la backend/
           echo "Test files:"
-          ls -la tests/
+          ls -la backend/tests/
 
       - name: Generate build summary
         run: |
@@ -125,22 +125,26 @@ jobs:
           pip install pytest pytest-asyncio pytest-cov
 
       - name: Run all backend tests
+        working-directory: ./backend
         run: |
           pytest tests/ -v --tb=short
         continue-on-error: false
 
       - name: Run unit tests separately
         if: always()
+        working-directory: ./backend
         run: |
           pytest tests/unit/ -v --tb=short
 
       - name: Run integration tests separately
         if: always()
+        working-directory: ./backend
         run: |
           pytest tests/integration/ -v --tb=short
 
       - name: Run system tests separately
         if: always()
+        working-directory: ./backend
         run: |
           pytest tests/system/ -v --tb=short
 
@@ -183,7 +187,7 @@ jobs:
       - name: Check for test files
         id: check-tests
         run: |
-          if [ ! -d "tests" ] || [ -z "$(find tests -name 'test_*.py' -o -name '*_test.py')" ]; then
+          if [ ! -d "backend/tests" ] || [ -z "$(find backend/tests -name 'test_*.py' -o -name '*_test.py')" ]; then
             echo "No test files found, skipping coverage report"
             echo "HAS_TESTS=false" >> $GITHUB_ENV
           else
@@ -195,13 +199,14 @@ jobs:
         if: env.HAS_TESTS == 'true'
         run: |
           mkdir -p reports/coverage
+          cd backend && \
           PYTHONPATH=$PYTHONPATH:$(pwd) \
           pytest tests/ \
-            --cov=backend \
+            --cov=. \
             --cov-report=term-missing \
-            --cov-report=html:reports/coverage/html \
-            --cov-report=xml:reports/coverage/coverage.xml \
-            --junitxml=reports/junit/test-results.xml \
+            --cov-report=html:../reports/coverage/html \
+            --cov-report=xml:../reports/coverage/coverage.xml \
+            --junitxml=../reports/junit/test-results.xml \
             --import-mode=append
 
       - name: Upload coverage report
