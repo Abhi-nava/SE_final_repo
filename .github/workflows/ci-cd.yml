@@ -2,9 +2,8 @@ name: Full Stack CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, tests, 'feature/*']
   pull_request:
-    branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
   # 🧱 1️⃣ Build
