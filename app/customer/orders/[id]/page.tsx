@@ -270,12 +270,13 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ordersAPI } from "@/lib/api"
+import { ordersAPI, ratingsAPI } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Clock, Truck, CheckCircle } from "lucide-react"
+import { ArrowLeft, Clock, Truck, CheckCircle, Star } from "lucide-react"
 import Link from "next/link"
+import { RatingModal } from "@/components/rating-modal"
 
 interface OrderItem {
   name: string
@@ -304,6 +305,8 @@ interface Order {
   items: OrderItem[]
   estimated_delivery_time?: number
   restaurant?: RestaurantMeta
+  restaurant_id?: string
+  delivery_agent_id?: string
 }
 
 export default function OrderDetailsPage() {
@@ -314,6 +317,8 @@ export default function OrderDetailsPage() {
 
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [ratingModalOpen, setRatingModalOpen] = useState(false)
+  const [hasRated, setHasRated] = useState(false)
 
   // poll every 5 seconds
   useEffect(() => {
@@ -327,6 +332,15 @@ export default function OrderDetailsPage() {
       const data = await ordersAPI.getOrder(orderId)
       console.log("Order data received:", data) // Debug log
       setOrder(data)
+      
+      // Check if order has been rated already
+      try {
+        const ratingCheck = await ratingsAPI.checkOrderRating(orderId)
+        setHasRated(ratingCheck.has_rating || false)
+      } catch (error) {
+        console.log("Could not check rating status:", error)
+        setHasRated(false)
+      }
     } catch (error: any) {
       console.error("Error loading order:", error) // Debug log
       toast({
@@ -389,19 +403,57 @@ const getStepsForStatus = () => {
         </Button>
       </Link>
 
-      {/* Restaurant Info */}
+      {/* Restaurant Info with Rating Button */}
       {order.restaurant && (
-        <Card className="p-4 mb-6 flex items-center gap-4">
-          <img
-            src={order.restaurant.image || "/placeholder.jpg"}
-            alt={order.restaurant.name}
-            className="w-20 h-20 rounded-lg object-cover"
-          />
-          <div>
-            <p className="font-bold text-xl">{order.restaurant.name}</p>
-            <p className="text-sm dark">Ordered from this restaurant</p>
+        <Card className="p-4 mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <img
+              src={order.restaurant.image || "/placeholder.jpg"}
+              alt={order.restaurant.name}
+              className="w-20 h-20 rounded-lg object-cover"
+            />
+            <div>
+              <p className="font-bold text-xl">{order.restaurant.name}</p>
+              <p className="text-sm dark">Ordered from this restaurant</p>
+            </div>
           </div>
+          {order.order_status === "delivered" ? (
+            hasRated ? (
+              <div className="text-sm text-green-600 font-semibold flex items-center gap-2">
+                <Star className="w-4 h-4 fill-green-600" />
+                Rated
+              </div>
+            ) : (
+              <Button
+                onClick={() => setRatingModalOpen(true)}
+                className="gap-2 whitespace-nowrap"
+                variant="default"
+              >
+                <Star className="w-4 h-4" />
+                Rate this order
+              </Button>
+            )
+          ) : (
+            <div className="text-xs text-gray-500 dark">
+              Available after delivery
+            </div>
+          )}
         </Card>
+      )}
+
+      {/* Rating Modal */}
+      {order.restaurant && (
+        <RatingModal
+          open={ratingModalOpen}
+          onOpenChange={setRatingModalOpen}
+          orderId={orderId}
+          restaurantId={order.restaurant_id || ""}
+          deliveryAgentId={order.delivery_agent_id}
+          onSubmit={() => {
+            setHasRated(true)
+            loadOrder()
+          }}
+        />
       )}
 
       {/* Order Info */}

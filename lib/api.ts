@@ -436,9 +436,10 @@ export const deliveryAPI = {
 
 // Ratings API
 export const ratingsAPI = {
-  create: (data: any) => apiFetch("/ratings/create", { method: "POST", body: JSON.stringify(data) }),
-  getRestaurantRatings: (restaurantId: string) => apiFetch(`/ratings/restaurant/${restaurantId}`),
-  getAgentRatings: (agentId: string) => apiFetch(`/ratings/delivery-agent/${agentId}`),
+  create: (data: any) => apiFetch("/api/ratings/create", { method: "POST", body: JSON.stringify(data) }),
+  getRestaurantRatings: (restaurantId: string) => apiFetch(`/api/ratings/restaurant/${restaurantId}`),
+  getAgentRatings: (agentId: string) => apiFetch(`/api/ratings/delivery-agent/${agentId}`),
+  checkOrderRating: (orderId: string) => apiFetch(`/api/ratings/check/${orderId}`),
 }
 
 // Admin API

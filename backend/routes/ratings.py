@@ -14,6 +14,12 @@ async def create_rating(
     current_user = Depends(get_current_customer)
 ):
     """Submit rating for order"""
+    print(f"\n{'='*60}")
+    print(f"[RATING] Create rating endpoint called")
+    print(f"[RATING] Rating data received: {rating_data.dict()}")
+    print(f"[RATING] Current user ID: {current_user['_id']}")
+    print(f"{'='*60}\n")
+    
     try:
         order = await db.orders.find_one({"_id": ObjectId(rating_data.order_id)})
     except:
@@ -28,39 +34,45 @@ async def create_rating(
             detail="Order not found"
         )
     
-    # Check if already rated
-    existing_rating = await db.ratings.find_one({"order_id": rating_data.order_id})
+    # Check if current customer already rated this order
+    existing_rating = await db.ratings.find_one({
+        "order_id": rating_data.order_id,
+        "customer_id": str(current_user["_id"])
+    })
     if existing_rating:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Already rated this order"
+            detail="You have already rated this order"
         )
     
-    now = datetime.now(timezone.utc)
+    now = rating_data.created_at or datetime.now(timezone.utc)
     rating_doc = {
         "order_id": rating_data.order_id,
         "customer_id": str(current_user["_id"]),
-        "restaurant_id": order["restaurant_id"],
-        "delivery_agent_id": order.get("delivery_agent_id"),
+        "restaurant_id": rating_data.restaurant_id,
+        "delivery_agent_id": rating_data.delivery_agent_id,
         "restaurant_rating": rating_data.restaurant_rating,
         "delivery_rating": rating_data.delivery_rating,
-        "restaurant_review": rating_data.restaurant_review,
-        "delivery_review": rating_data.delivery_review,
+        "delivery_speed": rating_data.delivery_speed,
+        "food_quality": rating_data.food_quality,
+        "packaging_quality": rating_data.packaging_quality,
         "created_at": now
     }
     
+    print(f"[RATING] Saving rating document: {rating_doc}")
     result = await db.ratings.insert_one(rating_doc)
+    print(f"[RATING] Rating saved with ID: {result.inserted_id}")
     
-    # Update restaurant average rating
+    # Update restaurant average rating (based on restaurant_rating and food_quality)
     restaurant_ratings = await db.ratings.find({
-        "restaurant_id": order["restaurant_id"],
+        "restaurant_id": rating_data.restaurant_id,
         "restaurant_rating": {"$ne": None}
     }).to_list(None)
     
     if restaurant_ratings:
         avg_rating = sum(r.get("restaurant_rating", 0) for r in restaurant_ratings) / len(restaurant_ratings)
         await db.restaurants.update_one(
-            {"_id": ObjectId(order["restaurant_id"])},
+            {"_id": ObjectId(rating_data.restaurant_id)},
             {
                 "$set": {
                     "rating": avg_rating,
@@ -70,16 +82,16 @@ async def create_rating(
         )
     
     # Update delivery agent rating if exists
-    if order.get("delivery_agent_id"):
+    if rating_data.delivery_agent_id:
         delivery_ratings = await db.ratings.find({
-            "delivery_agent_id": order["delivery_agent_id"],
+            "delivery_agent_id": rating_data.delivery_agent_id,
             "delivery_rating": {"$ne": None}
         }).to_list(None)
         
         if delivery_ratings:
             avg_rating = sum(r.get("delivery_rating", 0) for r in delivery_ratings) / len(delivery_ratings)
             await db.delivery_agents.update_one(
-                {"_id": ObjectId(order["delivery_agent_id"])},
+                {"_id": ObjectId(rating_data.delivery_agent_id)},
                 {
                     "$set": {
                         "rating": avg_rating,
@@ -92,6 +104,21 @@ async def create_rating(
         "id": str(result.inserted_id),
         "message": "Rating submitted successfully"
     }
+
+@router.get("/check/{order_id}")
+async def check_order_rating(order_id: str, current_user = Depends(get_current_customer)):
+    """Check if the current customer has rated this order"""
+    try:
+        existing_rating = await db.ratings.find_one({
+            "order_id": order_id,
+            "customer_id": str(current_user["_id"])
+        })
+        return {"has_rating": existing_rating is not None}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 @router.get("/restaurant/{restaurant_id}", response_model=list[RatingResponse])
 async def get_restaurant_ratings(restaurant_id: str):
@@ -110,8 +137,9 @@ async def get_restaurant_ratings(restaurant_id: str):
             delivery_agent_id=r.get("delivery_agent_id"),
             restaurant_rating=r.get("restaurant_rating"),
             delivery_rating=r.get("delivery_rating"),
-            restaurant_review=r.get("restaurant_review"),
-            delivery_review=r.get("delivery_review"),
+            delivery_speed=r.get("delivery_speed"),
+            food_quality=r.get("food_quality"),
+            packaging_quality=r.get("packaging_quality"),
             created_at=r["created_at"]
         )
         for r in ratings
@@ -134,8 +162,9 @@ async def get_agent_ratings(agent_id: str):
             delivery_agent_id=r.get("delivery_agent_id"),
             restaurant_rating=r.get("restaurant_rating"),
             delivery_rating=r.get("delivery_rating"),
-            restaurant_review=r.get("restaurant_review"),
-            delivery_review=r.get("delivery_review"),
+            delivery_speed=r.get("delivery_speed"),
+            food_quality=r.get("food_quality"),
+            packaging_quality=r.get("packaging_quality"),
             created_at=r["created_at"]
         )
         for r in ratings
