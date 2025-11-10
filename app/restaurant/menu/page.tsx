@@ -106,7 +106,7 @@
 
 //       {items.length === 0 ? (
 //         <Card className="p-12 text-center">
-//           <p className="text-lg text-muted mb-4">No menu items added yet.</p>
+//           <p className="text-lg dark mb-4">No menu items added yet.</p>
 //           <Link href="/restaurant/menu/add-item">
 //             <Button className="bg-primary text-white">Add Your First Item</Button>
 //           </Link>
@@ -123,22 +123,22 @@
 //                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Vegetarian</span>
 //                     )}
 //                   </div>
-//                   <p className="text-muted text-sm mb-3">{item.description}</p>
+//                   <p className="dark text-sm mb-3">{item.description}</p>
 //                   <div className="grid grid-cols-4 gap-4 text-sm">
 //                     <div>
-//                       <p className="text-muted">Category</p>
+//                       <p className="dark">Category</p>
 //                       <p className="font-semibold">{item.category}</p>
 //                     </div>
 //                     <div>
-//                       <p className="text-muted">Price</p>
+//                       <p className="dark">Price</p>
 //                       <p className="font-semibold">₹{item.price}</p>
 //                     </div>
 //                     <div>
-//                       <p className="text-muted">Prep Time</p>
+//                       <p className="dark">Prep Time</p>
 //                       <p className="font-semibold">{item.preparation_time} min</p>
 //                     </div>
 //                     <div>
-//                       <p className="text-muted">Status</p>
+//                       <p className="dark">Status</p>
 //                       <p
 //                         className={`font-semibold ${item.availability === "available" ? "text-green-600" : "text-red-600"}`}
 //                       >
@@ -301,9 +301,9 @@ const handleConfirmDelete = async () => {
           {/* Menu Details */}
           <div>
             <h3 className="text-xl font-bold">{item.name}</h3>
-            <p className="text-muted text-sm">{item.description}</p>
+            <p className="dark text-sm">{item.description}</p>
             <p className="mt-2 font-semibold">₹{item.price}</p>
-            <p className="mt-1 text-sm text-muted">
+            <p className="mt-1 text-sm dark">
               Daily count: <span className="font-semibold">{item.daily_count ?? 0}</span>
             </p>
           </div>

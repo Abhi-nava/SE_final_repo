@@ -116,7 +116,7 @@
 //           />
 //           <div>
 //             <p className="font-bold text-xl">{order.restaurant.name}</p>
-//             <p className="text-sm text-muted">Ordered from this restaurant</p>
+//             <p className="text-sm dark">Ordered from this restaurant</p>
 //           </div>
 //         </Card>
 //       )}
@@ -125,15 +125,15 @@
 //       <Card className="p-6 mb-6">
 //         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 //           <div>
-//             <p className="text-sm text-muted">Order ID</p>
+//             <p className="text-sm dark">Order ID</p>
 //             <p className="font-mono font-semibold">{order.id}</p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-muted">Order Date</p>
+//             <p className="text-sm dark">Order Date</p>
 //             <p>{new Date(order.created_at).toLocaleString()}</p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-muted">Total</p>
+//             <p className="text-sm dark">Total</p>
 //             <p className="text-2xl font-bold text-primary">₹{order.total?.toFixed(2)}</p>
 //           </div>
 //         </div>
@@ -176,7 +176,7 @@
 //                     {step.label}
 //                   </p>
 //                   {isActive && (
-//                     <p className="text-xs text-muted mt-1">
+//                     <p className="text-xs dark mt-1">
 //                       Current stage: {step.label.toLowerCase()}
 //                     </p>
 //                   )}
@@ -204,7 +204,7 @@
 //                 />
 //                 <div>
 //                   <p className="font-semibold">{item.name}</p>
-//                   <p className="text-sm text-muted">Qty: {item.quantity}</p>
+//                   <p className="text-sm dark">Qty: {item.quantity}</p>
 //                 </div>
 //               </div>
 //               <p className="font-bold">₹{(item.price * item.quantity).toFixed(2)}</p>
@@ -220,16 +220,16 @@
 //         </h2>
 //         <div className="space-y-3">
 //           <div>
-//             <p className="text-sm text-muted">Delivery Address</p>
+//             <p className="text-sm dark">Delivery Address</p>
 //             <p className="font-semibold">{order.delivery_address}</p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-muted">Phone</p>
+//             <p className="text-sm dark">Phone</p>
 //             <p className="font-semibold">{order.delivery_phone}</p>
 //           </div>
 //           {order.estimated_delivery_time && (
 //             <div>
-//               <p className="text-sm text-muted">Est. Delivery Time</p>
+//               <p className="text-sm dark">Est. Delivery Time</p>
 //               <p className="font-semibold">{order.estimated_delivery_time} mins</p>
 //             </div>
 //           )}
@@ -259,7 +259,7 @@
 //             <span className="text-primary">₹{order.total?.toFixed(2)}</span>
 //           </div>
 //           <div className="mt-4 pt-2 border-t border-border">
-//             <p className="text-muted">Payment: {order.payment_method?.toUpperCase()}</p>
+//             <p className="dark">Payment: {order.payment_method?.toUpperCase()}</p>
 //           </div>
 //         </div>
 //       </Card>
@@ -399,7 +399,7 @@ const getStepsForStatus = () => {
           />
           <div>
             <p className="font-bold text-xl">{order.restaurant.name}</p>
-            <p className="text-sm text-muted">Ordered from this restaurant</p>
+            <p className="text-sm dark">Ordered from this restaurant</p>
           </div>
         </Card>
       )}
@@ -408,15 +408,15 @@ const getStepsForStatus = () => {
       <Card className="p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p className="text-sm text-muted">Order ID</p>
+            <p className="text-sm dark">Order ID</p>
             <p className="font-mono font-semibold">{order.id}</p>
           </div>
           <div>
-            <p className="text-sm text-muted">Order Date</p>
+            <p className="text-sm dark">Order Date</p>
             <p>{new Date(order.created_at).toLocaleString()}</p>
           </div>
           <div>
-            <p className="text-sm text-muted">Total</p>
+            <p className="text-sm dark">Total</p>
             <p className="text-2xl font-bold text-primary">₹{order.total?.toFixed(2)}</p>
           </div>
         </div>
@@ -431,11 +431,11 @@ const getStepsForStatus = () => {
           </div>
           <div>
             <p className="font-semibold text-lg">{steps[currentIndex]?.label}</p>
-            <p className="text-sm text-muted capitalize">{order.order_status.replace("_", " ")}</p>
+            <p className="text-sm dark capitalize">{order.order_status.replace("_", " ")}</p>
           </div>
         </div>
         <div className="mt-4 pt-4 border-t">
-          <p className="text-xs text-muted">
+          <p className="text-xs dark">
             Payment Status: <span className="font-semibold capitalize">{order.status}</span>
           </p>
         </div>
@@ -478,7 +478,7 @@ const getStepsForStatus = () => {
                     {step.label}
                   </p>
                   {isActive && (
-                    <p className="text-xs text-muted mt-1">
+                    <p className="text-xs dark mt-1">
                       Current stage: {step.label.toLowerCase()}
                     </p>
                   )}
@@ -507,14 +507,14 @@ const getStepsForStatus = () => {
                   />
                   <div>
                     <p className="font-semibold">{item.name}</p>
-                    <p className="text-sm text-muted">Qty: {item.quantity}</p>
+                    <p className="text-sm dark">Qty: {item.quantity}</p>
                   </div>
                 </div>
                 <p className="font-bold">₹{(item.price * item.quantity).toFixed(2)}</p>
               </div>
             ))
           ) : (
-            <p className="text-muted">No items found</p>
+            <p className="dark">No items found</p>
           )}
         </div>
       </Card>
@@ -526,16 +526,16 @@ const getStepsForStatus = () => {
         </h2>
         <div className="space-y-3">
           <div>
-            <p className="text-sm text-muted">Delivery Address</p>
+            <p className="text-sm dark">Delivery Address</p>
             <p className="font-semibold">{order.delivery_address}</p>
           </div>
           <div>
-            <p className="text-sm text-muted">Phone</p>
+            <p className="text-sm dark">Phone</p>
             <p className="font-semibold">{order.delivery_phone}</p>
           </div>
           {order.estimated_delivery_time && (
             <div>
-              <p className="text-sm text-muted">Est. Delivery Time</p>
+              <p className="text-sm dark">Est. Delivery Time</p>
               <p className="font-semibold">{order.estimated_delivery_time} mins</p>
             </div>
           )}
@@ -565,7 +565,7 @@ const getStepsForStatus = () => {
             <span className="text-primary">₹{order.total?.toFixed(2)}</span>
           </div>
           <div className="mt-4 pt-2 border-t border-border">
-            <p className="text-muted">Payment: {order.payment_method?.toUpperCase()}</p>
+            <p className="dark">Payment: {order.payment_method?.toUpperCase()}</p>
           </div>
         </div>
       </Card>

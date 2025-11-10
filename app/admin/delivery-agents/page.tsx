@@ -70,7 +70,7 @@ export default function DeliveryAgentsManagement() {
         {agents.map((agent) => (
           <Card key={agent.id} className="p-6">
             <h3 className="font-bold text-lg">{agent.name}</h3>
-            <p className="text-sm text-muted mb-3">{agent.email}</p>
+            <p className="text-sm dark mb-3">{agent.email}</p>
 
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm">

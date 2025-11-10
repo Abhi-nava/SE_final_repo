@@ -77,13 +77,13 @@ export default function AvailableOrdersPage() {
   return (
     <div>
       <h1 className="text-4xl font-bold mb-2">Available Orders</h1>
-      <p className="text-muted mb-8">Showing {orders.length} orders ready for delivery</p>
+      <p className="dark mb-8">Showing {orders.length} orders ready for delivery</p>
 
       {orders.length === 0 ? (
         <Card className="p-12 text-center">
-          <Truck className="w-12 h-12 text-muted opacity-50 mx-auto mb-4" />
-          <p className="text-lg text-muted">No available orders at the moment</p>
-          <p className="text-sm text-muted mt-2">Check back soon!</p>
+          <Truck className="w-12 h-12 dark opacity-50 mx-auto mb-4" />
+          <p className="text-lg dark">No available orders at the moment</p>
+          <p className="text-sm dark mt-2">Check back soon!</p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -91,22 +91,22 @@ export default function AvailableOrdersPage() {
             <Card key={order.id} className="p-6 hover:shadow-lg transition-shadow">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div>
-                  <p className="text-sm text-muted">Order ID</p>
+                  <p className="text-sm dark">Order ID</p>
                   <p className="font-mono font-semibold text-sm">{order.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Total Amount</p>
+                  <p className="text-sm dark">Total Amount</p>
                   <p className="text-lg font-bold text-primary">₹{order.total?.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Est. Delivery</p>
+                  <p className="text-sm dark">Est. Delivery</p>
                   <p className="font-semibold flex items-center gap-1">
                     <Clock className="w-4 h-4" />
                     {order.estimated_delivery_time} min
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Items</p>
+                  <p className="text-sm dark">Items</p>
                   <p className="font-semibold">{order.items?.length} items</p>
                 </div>
               </div>
@@ -114,9 +114,9 @@ export default function AvailableOrdersPage() {
               <div className="flex items-start gap-2 mb-4 pb-4 border-b border-border">
                 <MapPin className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                 <div>
-                  <p className="text-sm text-muted">Delivery Address</p>
+                  <p className="text-sm dark">Delivery Address</p>
                   <p className="font-semibold">{order.delivery_address}</p>
-                  <p className="text-sm text-muted mt-1">Phone: {order.delivery_phone}</p>
+                  <p className="text-sm dark mt-1">Phone: {order.delivery_phone}</p>
                 </div>
               </div>
 

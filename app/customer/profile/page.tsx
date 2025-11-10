@@ -65,7 +65,7 @@ export default function CustomerProfilePage() {
           <div>
             <label className="block text-sm font-medium mb-2">Email</label>
             <Input value={user?.email} disabled className="bg-bg-alt" />
-            <p className="text-xs text-muted mt-1">Email cannot be changed</p>
+            <p className="text-xs dark mt-1">Email cannot be changed</p>
           </div>
 
           <div>

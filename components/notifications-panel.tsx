@@ -61,7 +61,7 @@ export function NotificationsPanel() {
 
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-muted">
+              <div className="p-8 text-center dark">
                 <p>No notifications yet</p>
               </div>
             ) : (
@@ -78,8 +78,8 @@ export function NotificationsPanel() {
                       <div className="mt-1">{getNotificationIcon(notification.type)}</div>
                       <div className="flex-1">
                         <p className="font-semibold text-sm">{notification.title}</p>
-                        <p className="text-xs text-muted">{notification.message}</p>
-                        <p className="text-xs text-muted mt-1">{new Date(notification.created_at).toLocaleString()}</p>
+                        <p className="text-xs dark">{notification.message}</p>
+                        <p className="text-xs dark mt-1">{new Date(notification.created_at).toLocaleString()}</p>
                       </div>
                     </div>
                   </div>

@@ -80,7 +80,7 @@ export default function RestaurantDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
+          <p className="dark-foreground">Loading dashboard...</p>
         </div>
       </div>
     )
@@ -89,7 +89,7 @@ export default function RestaurantDashboard() {
   if (!restaurant) {
     return (
       <div className="p-8 text-center">
-        <p className="text-muted-foreground mb-4">No restaurant found</p>
+        <p className="dark-foreground mb-4">No restaurant found</p>
         <Link href="/restaurant/create">
           <Button>Create Restaurant</Button>
         </Link>
@@ -101,8 +101,8 @@ export default function RestaurantDashboard() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">{restaurant.name}</h1>
-        <p className="text-muted-foreground">{restaurant.address}</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="dark-foreground">{restaurant.address}</p>
+        <p className="text-sm dark-foreground">
           Open: {restaurant.opening_time} - {restaurant.closing_time}
         </p>
       </div>
@@ -111,7 +111,7 @@ export default function RestaurantDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <Card className="p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-muted-foreground text-sm">Total Orders</p>
+            <p className="dark-foreground text-sm">Total Orders</p>
             <ShoppingBag className="h-5 w-5 text-blue-500" />
           </div>
           <p className="text-3xl font-bold">{summary.total_orders}</p>
@@ -119,7 +119,7 @@ export default function RestaurantDashboard() {
 
         <Card className="p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-muted-foreground text-sm">Pending Orders</p>
+            <p className="dark-foreground text-sm">Pending Orders</p>
             <Clock className="h-5 w-5 text-orange-500" />
           </div>
           <p className="text-3xl font-bold text-orange-600">{summary.pending_orders}</p>
@@ -127,7 +127,7 @@ export default function RestaurantDashboard() {
 
         <Card className="p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-muted-foreground text-sm">Completed Today</p>
+            <p className="dark-foreground text-sm">Completed Today</p>
             <TrendingUp className="h-5 w-5 text-green-500" />
           </div>
           <p className="text-3xl font-bold text-green-600">{summary.completed_today}</p>
@@ -135,7 +135,7 @@ export default function RestaurantDashboard() {
 
         <Card className="p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-muted-foreground text-sm">Revenue Today</p>
+            <p className="dark-foreground text-sm">Revenue Today</p>
             <span className="text-xl">₹</span>
           </div>
           <p className="text-3xl font-bold text-primary">₹{summary.revenue_today.toLocaleString()}</p>
@@ -148,28 +148,28 @@ export default function RestaurantDashboard() {
           <div className="flex items-center gap-2 mb-4">
             <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
             <h2 className="text-xl font-bold">Ratings Summary</h2>
-            <span className="text-sm text-muted-foreground">({ratings.count} reviews)</span>
+            <span className="text-sm dark-foreground">({ratings.count} reviews)</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <p className="text-2xl font-bold text-primary">{ratings.avg_restaurant.toFixed(1)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Restaurant</p>
+              <p className="text-xs dark-foreground mt-1">Restaurant</p>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <p className="text-2xl font-bold text-primary">{ratings.avg_delivery.toFixed(1)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Delivery</p>
+              <p className="text-xs dark-foreground mt-1">Delivery</p>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <p className="text-2xl font-bold text-primary">{ratings.avg_food_quality.toFixed(1)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Food Quality</p>
+              <p className="text-xs dark-foreground mt-1">Food Quality</p>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <p className="text-2xl font-bold text-primary">{ratings.avg_delivery_speed.toFixed(1)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Speed</p>
+              <p className="text-xs dark-foreground mt-1">Speed</p>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <p className="text-2xl font-bold text-primary">{ratings.avg_packaging_quality.toFixed(1)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Packaging</p>
+              <p className="text-xs dark-foreground mt-1">Packaging</p>
             </div>
           </div>
         </Card>
@@ -179,7 +179,7 @@ export default function RestaurantDashboard() {
       {ratings && ratings.count === 0 && (
         <Card className="p-6 mb-10 text-center">
           <Star className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-          <p className="text-muted-foreground">No ratings yet. Complete orders to start receiving reviews!</p>
+          <p className="dark-foreground">No ratings yet. Complete orders to start receiving reviews!</p>
         </Card>
       )}
 

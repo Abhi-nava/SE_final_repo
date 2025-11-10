@@ -130,7 +130,7 @@
 
 //       {orders.length === 0 ? (
 //         <Card className="p-12 text-center">
-//           <p className="text-lg text-muted mb-4">You haven't placed any orders yet.</p>
+//           <p className="text-lg dark mb-4">You haven't placed any orders yet.</p>
 //           <Link href="/customer">
 //             <Button className="bg-primary text-white">Browse Restaurants</Button>
 //           </Link>
@@ -141,11 +141,11 @@
 //             <Card key={order.id} className="p-6">
 //               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
 //                 <div>
-//                   <p className="text-sm text-muted">Order ID</p>
+//                   <p className="text-sm dark">Order ID</p>
 //                   <p className="font-mono text-sm font-semibold">{order.id}</p>
 //                 </div>
 //                 <div>
-//                   <p className="text-sm text-muted">Status</p>
+//                   <p className="text-sm dark">Status</p>
 //                   <span
 //                     className={`inline-block px-3 py-1 rounded text-sm font-semibold ${getStatusColor(order.status)}`}
 //                   >
@@ -153,22 +153,22 @@
 //                   </span>
 //                 </div>
 //                 <div>
-//                   <p className="text-sm text-muted">Total</p>
+//                   <p className="text-sm dark">Total</p>
 //                   <p className="font-bold text-lg text-primary">₹{order.total?.toFixed(2)}</p>
 //                 </div>
 //                 <div>
-//                   <p className="text-sm text-muted">Items</p>
+//                   <p className="text-sm dark">Items</p>
 //                   <p className="font-semibold">{order.items?.length || 0} items</p>
 //                 </div>
 //               </div>
 
-//               <div className="flex items-center gap-2 text-sm text-muted mb-4 pb-4 border-b border-border">
+//               <div className="flex items-center gap-2 text-sm dark mb-4 pb-4 border-b border-border">
 //                 <MapPin className="w-4 h-4" />
 //                 <span>{order.delivery_address}</span>
 //               </div>
 
 //               <div className="flex items-center justify-between">
-//                 <div className="flex items-center gap-2 text-xs text-muted">
+//                 <div className="flex items-center gap-2 text-xs dark">
 //                   <Clock className="w-4 h-4" />
 //                   <span>{new Date(order.created_at).toLocaleDateString()}</span>
 //                 </div>
@@ -301,7 +301,7 @@ export default function OrdersPage() {
 
       {orders.length === 0 ? (
         <Card className="p-12 text-center">
-          <p className="text-lg text-muted mb-4">You haven't placed any orders yet.</p>
+          <p className="text-lg dark mb-4">You haven't placed any orders yet.</p>
           <Link href="/customer">
             <Button className="bg-primary text-white">Browse Restaurants</Button>
           </Link>
@@ -326,11 +326,11 @@ export default function OrdersPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div>
-                  <p className="text-sm text-muted">Order ID</p>
+                  <p className="text-sm dark">Order ID</p>
                   <p className="font-mono text-sm font-semibold">{order.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Status</p>
+                  <p className="text-sm dark">Status</p>
                   <span
                     className={`inline-block px-3 py-1 rounded text-sm font-semibold ${getStatusColor(order.status)}`}
                   >
@@ -338,22 +338,22 @@ export default function OrdersPage() {
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Total</p>
+                  <p className="text-sm dark">Total</p>
                   <p className="font-bold text-lg text-primary">₹{order.total?.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Items</p>
+                  <p className="text-sm dark">Items</p>
                   <p className="font-semibold">{order.items?.length || 0} items</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted mb-4 pb-4 border-b border-border">
+              <div className="flex items-center gap-2 text-sm dark mb-4 pb-4 border-b border-border">
                 <MapPin className="w-4 h-4" />
                 <span>{order.delivery_address}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-muted">
+                <div className="flex items-center gap-2 text-xs dark">
                   <Clock className="w-4 h-4" />
                   <span>{new Date(order.created_at).toLocaleDateString()}</span>
                 </div>

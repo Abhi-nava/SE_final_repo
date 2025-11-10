@@ -45,7 +45,7 @@ export default function CustomerLayout({
           </div>
           <div className="text-sm">
             <p className="font-semibold">{user.full_name}</p>
-            <p className="text-muted text-xs">{user.email}</p>
+            <p className="dark text-xs">{user.email}</p>
           </div>
         </div>
 

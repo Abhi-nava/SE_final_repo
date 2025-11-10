@@ -79,11 +79,11 @@ export default function UsersManagement() {
             {users.map((user) => (
               <tr key={user.id} className="border-b hover:bg-secondary/50">
                 <td className="p-4 font-medium">{user.name}</td>
-                <td className="p-4 text-sm text-muted">{user.email}</td>
+                <td className="p-4 text-sm dark">{user.email}</td>
                 <td className="p-4 text-sm">{user.phone}</td>
                 <td className="p-4">{user.orders_count}</td>
                 <td className="p-4 font-semibold text-green-600">₹{user.total_spent.toFixed(2)}</td>
-                <td className="p-4 text-sm text-muted">{new Date(user.created_at).toLocaleDateString()}</td>
+                <td className="p-4 text-sm dark">{new Date(user.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>

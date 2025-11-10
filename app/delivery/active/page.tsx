@@ -87,12 +87,12 @@ export default function ActiveDeliveriesPage() {
   return (
     <div>
       <h1 className="text-4xl font-bold mb-2">Active Deliveries</h1>
-      <p className="text-muted mb-8">{deliveries.length} deliveries in progress</p>
+      <p className="dark mb-8">{deliveries.length} deliveries in progress</p>
 
       {deliveries.length === 0 ? (
         <Card className="p-12 text-center">
           <CheckCircle className="w-12 h-12 text-success opacity-50 mx-auto mb-4" />
-          <p className="text-lg text-muted">No active deliveries</p>
+          <p className="text-lg dark">No active deliveries</p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -100,15 +100,15 @@ export default function ActiveDeliveriesPage() {
             <Card key={delivery.id} className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <p className="text-sm text-muted">Order ID</p>
+                  <p className="text-sm dark">Order ID</p>
                   <p className="font-mono font-semibold text-sm">{delivery.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Status</p>
+                  <p className="text-sm dark">Status</p>
                   <p className="font-semibold text-primary">{delivery.status.toUpperCase().replace("_", " ")}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Delivery Value</p>
+                  <p className="text-sm dark">Delivery Value</p>
                   <p className="font-bold">₹{delivery.total?.toFixed(2)}</p>
                 </div>
               </div>
@@ -117,12 +117,12 @@ export default function ActiveDeliveriesPage() {
                 <div className="flex items-start gap-2 mb-2">
                   <MapPin className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-sm text-muted">Delivery Address</p>
+                    <p className="text-sm dark">Delivery Address</p>
                     <p className="font-semibold">{delivery.delivery_address}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-6">
-                  <Phone className="w-4 h-4 text-muted" />
+                  <Phone className="w-4 h-4 dark" />
                   <a href={`tel:${delivery.delivery_phone}`} className="text-primary hover:underline">
                     {delivery.delivery_phone}
                   </a>

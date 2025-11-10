@@ -104,7 +104,7 @@ export default function AdminDashboard() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted mt-2">Platform overview and analytics</p>
+        <p className="dark mt-2">Platform overview and analytics</p>
       </div>
 
       {/* Stats Grid */}
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
               <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center mb-4`}>
                 <Icon className="w-6 h-6" />
               </div>
-              <p className="text-sm text-muted">{stat.label}</p>
+              <p className="text-sm dark">{stat.label}</p>
               <p className="text-2xl font-bold mt-2">{stat.value}</p>
             </Card>
           )
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
           <Card className="p-6 cursor-pointer hover:shadow-lg transition-shadow">
             <Store className="w-8 h-8 text-orange-600 mb-2" />
             <h3 className="font-semibold">Manage Restaurants</h3>
-            <p className="text-sm text-muted mt-1">{analytics.active_restaurants} active</p>
+            <p className="text-sm dark mt-1">{analytics.active_restaurants} active</p>
           </Card>
         </Link>
 
@@ -183,7 +183,7 @@ export default function AdminDashboard() {
           <Card className="p-6 cursor-pointer hover:shadow-lg transition-shadow">
             <Bike className="w-8 h-8 text-purple-600 mb-2" />
             <h3 className="font-semibold">Manage Delivery Agents</h3>
-            <p className="text-sm text-muted mt-1">{analytics.active_delivery_agents} active</p>
+            <p className="text-sm dark mt-1">{analytics.active_delivery_agents} active</p>
           </Card>
         </Link>
 
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
           <Card className="p-6 cursor-pointer hover:shadow-lg transition-shadow">
             <Users className="w-8 h-8 text-green-600 mb-2" />
             <h3 className="font-semibold">Manage Users</h3>
-            <p className="text-sm text-muted mt-1">All customers</p>
+            <p className="text-sm dark mt-1">All customers</p>
           </Card>
         </Link>
       </div>

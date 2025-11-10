@@ -50,7 +50,7 @@
 //         <Input value={item.name} onChange={(e) => setItem({ ...item, name: e.target.value })} placeholder="Name" />
 //         <Input value={item.description} onChange={(e) => setItem({ ...item, description: e.target.value })} placeholder="Description" />
 //         <Input value={item.price} type="number" onChange={(e) => setItem({ ...item, price: Number(e.target.value) })} placeholder="Price" />
-//         <label className="block text-sm text-muted">Daily Count</label>
+//         <label className="block text-sm dark">Daily Count</label>
 //         <input
 //             type="number"
 //             value={item.daily_count ?? 0}
@@ -150,7 +150,7 @@ export default function EditMenuItemPage() {
           placeholder="Price"
         />
 
-        <label className="block text-sm text-muted">Daily Count</label>
+        <label className="block text-sm dark">Daily Count</label>
         <input
           type="number"
           value={item.daily_count ?? 0}
@@ -162,7 +162,7 @@ export default function EditMenuItemPage() {
 
         {/* Image Upload + Preview */}
         <div className="mt-4 space-y-2">
-          <label className="block text-sm font-medium text-muted-foreground">
+          <label className="block text-sm font-medium dark-foreground">
             Menu Item Image
           </label>
 

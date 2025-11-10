@@ -80,7 +80,7 @@ export default function RestaurantsManagement() {
             {restaurants.map((restaurant) => (
               <tr key={restaurant.id} className="border-b hover:bg-secondary/50">
                 <td className="p-4">{restaurant.name}</td>
-                <td className="p-4 text-sm text-muted">{restaurant.email}</td>
+                <td className="p-4 text-sm dark">{restaurant.email}</td>
                 <td className="p-4">{restaurant.orders_count}</td>
                 <td className="p-4 font-semibold">₹{restaurant.revenue.toFixed(2)}</td>
                 <td className="p-4">

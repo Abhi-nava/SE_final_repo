@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # MongoDB connection
 MONGO_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "food_delivery")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "FoodHub-SE-MiniProj")
 
 db_client: Optional[AsyncIOMotorClient] = None
 db: Optional[AsyncIOMotorDatabase] = None

@@ -153,7 +153,7 @@
 //             {isLoading ? "Loading..." : mode === "login" ? "Sign In" : "Create Account"}
 //           </Button>
 
-//           <p className="text-center text-sm text-muted">
+//           <p className="text-center text-sm dark">
 //             {mode === "login" ? "Don't have an account?" : "Already have an account?"}
 //             <button
 //               type="button"
@@ -166,7 +166,7 @@
 
 //           {mode === "login" && (
 //             <div className="mt-6 pt-6 border-t border-border">
-//               <p className="text-xs text-muted mb-3 font-semibold">Quick Dev Login (Password: dev)</p>
+//               <p className="text-xs dark mb-3 font-semibold">Quick Dev Login (Password: dev)</p>
 //               <div className="grid grid-cols-2 gap-2">
 //                 {devCredentials.map((cred) => (
 //                   <Button
@@ -362,7 +362,7 @@ export function AuthModal({ open, onOpenChange, mode: initialMode }: AuthModalPr
               {isLoading ? "Loading..." : mode === "login" ? "Sign In" : "Create Account"}
             </Button>
 
-            <div className="text-center text-sm text-muted">
+            <div className="text-center text-sm dark">
               {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
               <button
                 type="button"
@@ -377,7 +377,7 @@ export function AuthModal({ open, onOpenChange, mode: initialMode }: AuthModalPr
               <button
                 type="button"
                 onClick={() => setSelectedRole("")}
-                className="text-xs text-muted hover:underline mt-2"
+                className="text-xs dark hover:underline mt-2"
               >
                 ← Change Role
               </button>

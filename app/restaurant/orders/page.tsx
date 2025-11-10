@@ -96,7 +96,7 @@
 //         </h2>
 
 //         {activeOrders.length === 0 ? (
-//           <Card className="p-8 text-center text-muted">No active orders</Card>
+//           <Card className="p-8 text-center dark">No active orders</Card>
 //         ) : (
 //           <div className="space-y-4">
 //             {activeOrders.map((order) => (
@@ -112,10 +112,10 @@
 //                       </span>
 //                     </div>
 
-//                     <p className="text-sm text-muted">
+//                     <p className="text-sm dark">
 //                       Phone: {order.delivery_phone}
 //                     </p>
-//                     <p className="text-sm text-muted">
+//                     <p className="text-sm dark">
 //                       Address: {order.delivery_address}
 //                     </p>
 
@@ -186,7 +186,7 @@
 //         </h2>
 
 //         {completedOrders.length === 0 ? (
-//           <Card className="p-8 text-center text-muted">
+//           <Card className="p-8 text-center dark">
 //             No delivered orders
 //           </Card>
 //         ) : (
@@ -403,7 +403,7 @@ const statusColors: Record<string, string> = {
         </h2>
 
         {activeOrders.length === 0 ? (
-          <Card className="p-8 text-center text-muted">No active orders</Card>
+          <Card className="p-8 text-center dark">No active orders</Card>
         ) : (
           <div className="space-y-4">
             {activeOrders.map((order) => {
@@ -421,10 +421,10 @@ const statusColors: Record<string, string> = {
                         </span>
                       </div>
 
-                      <p className="text-sm text-muted">
+                      <p className="text-sm dark">
                         Phone: {order.delivery_phone}
                       </p>
-                      <p className="text-sm text-muted">
+                      <p className="text-sm dark">
                         Address: {order.delivery_address}
                       </p>
 
@@ -493,7 +493,7 @@ const statusColors: Record<string, string> = {
         </h2>
 
         {completedOrders.length === 0 ? (
-          <Card className="p-8 text-center text-muted">
+          <Card className="p-8 text-center dark">
             No delivered orders
           </Card>
         ) : (
@@ -540,7 +540,7 @@ const statusColors: Record<string, string> = {
           </DialogHeader>
 
           {agents.length === 0 ? (
-            <p className="text-sm text-muted">
+            <p className="text-sm dark">
               No verified delivery agents available.
             </p>
           ) : (

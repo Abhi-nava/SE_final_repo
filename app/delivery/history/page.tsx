@@ -54,12 +54,12 @@ export default function DeliveryHistoryPage() {
   return (
     <div>
       <h1 className="text-4xl font-bold mb-2">Delivery History</h1>
-      <p className="text-muted mb-8">{deliveries.length} completed deliveries</p>
+      <p className="dark mb-8">{deliveries.length} completed deliveries</p>
 
       {deliveries.length === 0 ? (
         <Card className="p-12 text-center">
-          <Calendar className="w-12 h-12 text-muted opacity-50 mx-auto mb-4" />
-          <p className="text-lg text-muted">No delivery history yet</p>
+          <Calendar className="w-12 h-12 dark opacity-50 mx-auto mb-4" />
+          <p className="text-lg dark">No delivery history yet</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -67,19 +67,19 @@ export default function DeliveryHistoryPage() {
             <Card key={delivery.id} className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                 <div>
-                  <p className="text-xs text-muted">Order ID</p>
+                  <p className="text-xs dark">Order ID</p>
                   <p className="font-mono text-sm font-semibold">{delivery.id}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted">Date</p>
+                  <p className="text-xs dark">Date</p>
                   <p className="text-sm">{new Date(delivery.created_at).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted">Address</p>
+                  <p className="text-xs dark">Address</p>
                   <p className="text-sm line-clamp-1">{delivery.delivery_address}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted">Fee Earned</p>
+                  <p className="text-xs dark">Fee Earned</p>
                   <p className="font-bold text-primary">₹{delivery.delivery_fee?.toFixed(0)}</p>
                 </div>
                 <div>

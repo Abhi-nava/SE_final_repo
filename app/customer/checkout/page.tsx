@@ -334,7 +334,7 @@ const handlePaymentSubmit = async () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <UtensilsCrossed className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <UtensilsCrossed className="w-12 h-12 mx-auto mb-4 dark-foreground" />
           <p className="mb-4">Your cart is empty</p>
           <Link href="/customer">
             <Button>Continue Shopping</Button>
