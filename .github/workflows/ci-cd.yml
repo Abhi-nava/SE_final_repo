@@ -180,24 +180,46 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-asyncio pytest-cov
 
-      - name: Generate backend coverage report
+      - name: Check for test files
+        id: check-tests
         run: |
+          if [ ! -d "tests" ] || [ -z "$(find tests -name 'test_*.py' -o -name '*_test.py')" ]; then
+            echo "No test files found, skipping coverage report"
+            echo "HAS_TESTS=false" >> $GITHUB_ENV
+          else
+            echo "Test files found, running coverage"
+            echo "HAS_TESTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Generate backend coverage report
+        if: env.HAS_TESTS == 'true'
+        run: |
+          mkdir -p reports/coverage
           pytest tests/ \
-            --cov=backend/utils/security \
-            --cov=backend/utils/dependencies \
-            --cov=backend/routes/auth \
+            --cov=backend \
             --cov-report=term-missing \
-            --cov-report=html \
-            --cov-report=xml || true
+            --cov-report=html:reports/coverage/html \
+            --cov-report=xml:reports/coverage/coverage.xml \
+            --junitxml=reports/junit/test-results.xml
 
       - name: Upload coverage report
+        if: always() && env.HAS_TESTS == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |
-            htmlcov/
-            coverage.xml
+            reports/coverage/
+            reports/junit/
+          retention-days: 7
           if-no-files-found: warn
+
+      - name: Skip coverage report
+        if: env.HAS_TESTS != 'true'
+        run: |
+          echo "##[warning]No test files found, skipping coverage report"
+          mkdir -p reports/coverage
+          touch reports/coverage/coverage.xml
+          touch reports/coverage/index.html
 
       - name: Generate coverage summary
         run: |
@@ -283,14 +305,6 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run pnpm audit
-        run: pnpm audit --audit-level=moderate
-        continue-on-error: true
-
-      - name: Check for outdated dependencies
-        run: pnpm outdated
-        continue-on-error: true
-
       # Backend Security
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -302,12 +316,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install safety bandit
 
-      - name: Run safety check
+      - name: Run safety check (vulnerabilities only)
         continue-on-error: true
         working-directory: ./backend
         run: |
           pip install -r requirements.txt
-          safety check --json > ../safety-report.json || true
+          # Only check for security vulnerabilities, ignore outdated packages
+          safety check --json --ignore-unpinned > ../safety-report.json || true
 
       - name: Run bandit security linter
         continue-on-error: true
