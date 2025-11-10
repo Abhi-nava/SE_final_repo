@@ -195,12 +195,14 @@ jobs:
         if: env.HAS_TESTS == 'true'
         run: |
           mkdir -p reports/coverage
+          PYTHONPATH=$PYTHONPATH:$(pwd) \
           pytest tests/ \
             --cov=backend \
             --cov-report=term-missing \
             --cov-report=html:reports/coverage/html \
             --cov-report=xml:reports/coverage/coverage.xml \
-            --junitxml=reports/junit/test-results.xml
+            --junitxml=reports/junit/test-results.xml \
+            --import-mode=append
 
       - name: Upload coverage report
         if: always() && env.HAS_TESTS == 'true'
