@@ -1,4 +1,4 @@
-name: Full Stack CI/CD Pipeline
+name: Backend Utils Tests CI Pipeline
 
 on:
   push:
