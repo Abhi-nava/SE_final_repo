@@ -168,13 +168,11 @@ def mock_order_preparing():
 @pytest.mark.asyncio
 async def test_cancel_order_success_paid(mock_user, mock_order_paid):
     """Test successful cancellation of order with 'paid' status"""
-    from database import db
-    
     order_id = str(mock_order_paid["_id"])
     
-    # Mock database operations
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find, \
-         patch.object(db.orders, 'update_one', new_callable=AsyncMock) as mock_update:
+    # Mock database operations in routes.orders module
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find, \
+         patch('routes.orders.db.orders.update_one', new_callable=AsyncMock) as mock_update:
         
         mock_find.return_value = mock_order_paid
         mock_update.return_value = MagicMock(modified_count=1)
@@ -201,12 +199,10 @@ async def test_cancel_order_success_paid(mock_user, mock_order_paid):
 @pytest.mark.asyncio
 async def test_cancel_order_success_pending(mock_user, mock_order_pending):
     """Test successful cancellation of order with 'pending' status"""
-    from database import db
-    
     order_id = str(mock_order_pending["_id"])
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find, \
-         patch.object(db.orders, 'update_one', new_callable=AsyncMock) as mock_update:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find, \
+         patch('routes.orders.db.orders.update_one', new_callable=AsyncMock) as mock_update:
         
         mock_find.return_value = mock_order_pending
         mock_update.return_value = MagicMock(modified_count=1)
@@ -222,12 +218,10 @@ async def test_cancel_order_success_pending(mock_user, mock_order_pending):
 @pytest.mark.asyncio
 async def test_cancel_order_success_confirmed(mock_user, mock_order_confirmed):
     """Test successful cancellation of order with 'confirmed' status"""
-    from database import db
-    
     order_id = str(mock_order_confirmed["_id"])
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find, \
-         patch.object(db.orders, 'update_one', new_callable=AsyncMock) as mock_update:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find, \
+         patch('routes.orders.db.orders.update_one', new_callable=AsyncMock) as mock_update:
         
         mock_find.return_value = mock_order_confirmed
         mock_update.return_value = MagicMock(modified_count=1)
@@ -243,11 +237,9 @@ async def test_cancel_order_success_confirmed(mock_user, mock_order_confirmed):
 @pytest.mark.asyncio
 async def test_cancel_order_not_found(mock_user):
     """Test cancellation when order doesn't exist"""
-    from database import db
-    
     order_id = "507f1f77bcf86cd799439099"
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find:
         mock_find.return_value = None
         
         with pytest.raises(HTTPException) as exc_info:
@@ -262,11 +254,9 @@ async def test_cancel_order_not_found(mock_user):
 @pytest.mark.asyncio
 async def test_cancel_order_invalid_objectid(mock_user):
     """Test cancellation with invalid ObjectId format"""
-    from database import db
-    
     order_id = "invalid_id"
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find:
         # Simulate ObjectId conversion error
         mock_find.side_effect = Exception("Invalid ObjectId")
         
@@ -280,11 +270,9 @@ async def test_cancel_order_invalid_objectid(mock_user):
 @pytest.mark.asyncio
 async def test_cancel_order_unauthorized(mock_user, mock_other_user, mock_order_paid):
     """Test cancellation when user doesn't own the order"""
-    from database import db
-    
     order_id = str(mock_order_paid["_id"])
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find:
         mock_find.return_value = mock_order_paid
         
         with pytest.raises(HTTPException) as exc_info:
@@ -299,11 +287,9 @@ async def test_cancel_order_unauthorized(mock_user, mock_other_user, mock_order_
 @pytest.mark.asyncio
 async def test_cancel_order_already_cancelled(mock_user, mock_order_cancelled):
     """Test cancellation when order is already cancelled"""
-    from database import db
-    
     order_id = str(mock_order_cancelled["_id"])
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find:
         mock_find.return_value = mock_order_cancelled
         
         with pytest.raises(HTTPException) as exc_info:
@@ -318,11 +304,9 @@ async def test_cancel_order_already_cancelled(mock_user, mock_order_cancelled):
 @pytest.mark.asyncio
 async def test_cancel_order_delivered(mock_user, mock_order_delivered):
     """Test cancellation when order is already delivered"""
-    from database import db
-    
     order_id = str(mock_order_delivered["_id"])
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find:
         mock_find.return_value = mock_order_delivered
         
         with pytest.raises(HTTPException) as exc_info:
@@ -338,11 +322,9 @@ async def test_cancel_order_delivered(mock_user, mock_order_delivered):
 @pytest.mark.asyncio
 async def test_cancel_order_preparing_status(mock_user, mock_order_preparing):
     """Test cancellation when order is in preparing status (non-cancellable)"""
-    from database import db
-    
     order_id = str(mock_order_preparing["_id"])
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find:
         mock_find.return_value = mock_order_preparing
         
         with pytest.raises(HTTPException) as exc_info:
@@ -358,8 +340,6 @@ async def test_cancel_order_preparing_status(mock_user, mock_order_preparing):
 @pytest.mark.asyncio
 async def test_cancel_order_in_transit(mock_user):
     """Test cancellation when order is in transit"""
-    from database import db
-    
     order_id = "507f1f77bcf86cd799439026"
     mock_order = {
         "_id": ObjectId(order_id),
@@ -371,7 +351,7 @@ async def test_cancel_order_in_transit(mock_user):
         "updated_at": datetime.utcnow()
     }
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find:
         mock_find.return_value = mock_order
         
         with pytest.raises(HTTPException) as exc_info:
@@ -386,12 +366,10 @@ async def test_cancel_order_in_transit(mock_user):
 @pytest.mark.asyncio
 async def test_cancel_order_updates_timestamps(mock_user, mock_order_paid):
     """Test that cancellation updates cancelled_at and updated_at timestamps"""
-    from database import db
-    
     order_id = str(mock_order_paid["_id"])
     
-    with patch.object(db.orders, 'find_one', new_callable=AsyncMock) as mock_find, \
-         patch.object(db.orders, 'update_one', new_callable=AsyncMock) as mock_update:
+    with patch('routes.orders.db.orders.find_one', new_callable=AsyncMock) as mock_find, \
+         patch('routes.orders.db.orders.update_one', new_callable=AsyncMock) as mock_update:
         
         mock_find.return_value = mock_order_paid
         mock_update.return_value = MagicMock(modified_count=1)
