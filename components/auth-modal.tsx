@@ -1,0 +1,390 @@
+// "use client"
+
+// import type React from "react"
+
+// import { useState } from "react"
+// import { useAuth } from "@/lib/auth-context"
+// import { Button } from "@/components/ui/button"
+// import { Input } from "@/components/ui/input"
+// import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+// import { useToast } from "@/hooks/use-toast"
+
+// interface AuthModalProps {
+//   open: boolean
+//   onOpenChange: (open: boolean) => void
+//   mode: "login" | "register"
+//   role?: string
+// }
+
+// async function sha256(str: string): Promise<string> {
+//   const encoder = new TextEncoder()
+//   const data = encoder.encode(str)
+//   const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+//   const hashArray = Array.from(new Uint8Array(hashBuffer))
+//   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("")
+// }
+
+// export function AuthModal({ open, onOpenChange, mode: initialMode, role = "customer" }: AuthModalProps) {
+//   const [mode, setMode] = useState<"login" | "register">(initialMode)
+//   const [isLoading, setIsLoading] = useState(false)
+//   const { login, register } = useAuth()
+//   const { toast } = useToast()
+
+//   const [formData, setFormData] = useState({
+//     email: "",
+//     password: "",
+//     fullName: "",
+//     phone: "",
+//   })
+
+//   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const { name, value } = e.target
+//     setFormData((prev) => ({ ...prev, [name]: value }))
+//   }
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//     e.preventDefault()
+//     setIsLoading(true)
+
+//     try {
+//       console.log("[v0] Submitting auth form", { mode, email: formData.email })
+//       if (mode === "login") {
+//         await login(formData.email, formData.password)
+//       } else {
+//         await register(formData.email, formData.password, formData.fullName, formData.phone, role)
+//       }
+
+//       toast({
+//         title: "Success",
+//         description: mode === "login" ? "Logged in successfully" : "Account created successfully",
+//       })
+
+//       onOpenChange(false)
+//       setFormData({ email: "", password: "", fullName: "", phone: "" })
+//     } catch (error: any) {
+//       console.error("[v0] Auth error:", error)
+//       toast({
+//         title: "Error",
+//         description: error.message,
+//         variant: "destructive",
+//       })
+//     } finally {
+//       setIsLoading(false)
+//     }
+//   }
+
+//   const handleDevLogin = async (email: string) => {
+//     setIsLoading(true)
+//     console.log("[v0] Dev login attempt:", email)
+//     try {
+//       await login(email, "dev")
+//       toast({
+//         title: "Dev Login Successful",
+//         description: `Logged in as ${email}`,
+//       })
+//       onOpenChange(false)
+//     } catch (error: any) {
+//       console.error("[v0] Dev login error:", error)
+//       toast({
+//         title: "Error",
+//         description: error.message,
+//         variant: "destructive",
+//       })
+//     } finally {
+//       setIsLoading(false)
+//     }
+//   }
+
+//   const devCredentials = [
+//     { email: "customer@dev", role: "Customer" },
+//     { email: "restaurant@dev", role: "Restaurant" },
+//     { email: "delivery@dev", role: "Delivery Agent" },
+//     { email: "admin@dev", role: "Admin" },
+//   ]
+
+//   return (
+//     <Dialog open={open} onOpenChange={onOpenChange}>
+//       <DialogContent className="sm:max-w-[400px]">
+//         <DialogHeader>
+//           <DialogTitle>{mode === "login" ? "Welcome Back" : "Create Account"}</DialogTitle>
+//           <DialogDescription>{mode === "login" ? "Sign in to your account" : `Sign up as ${role}`}</DialogDescription>
+//         </DialogHeader>
+
+//         <form onSubmit={handleSubmit} className="space-y-4">
+//           {mode === "register" && (
+//             <>
+//               <Input
+//                 placeholder="Full Name"
+//                 name="fullName"
+//                 value={formData.fullName}
+//                 onChange={handleInputChange}
+//                 required
+//               />
+//               <Input
+//                 placeholder="Phone"
+//                 name="phone"
+//                 type="tel"
+//                 value={formData.phone}
+//                 onChange={handleInputChange}
+//                 required
+//               />
+//             </>
+//           )}
+
+//           <Input
+//             placeholder="Email"
+//             name="email"
+//             type="email"
+//             value={formData.email}
+//             onChange={handleInputChange}
+//             required
+//           />
+
+//           <Input
+//             placeholder="Password"
+//             name="password"
+//             type="password"
+//             value={formData.password}
+//             onChange={handleInputChange}
+//             required
+//           />
+
+//           <Button type="submit" className="w-full" disabled={isLoading}>
+//             {isLoading ? "Loading..." : mode === "login" ? "Sign In" : "Create Account"}
+//           </Button>
+
+//           <p className="text-center text-sm dark">
+//             {mode === "login" ? "Don't have an account?" : "Already have an account?"}
+//             <button
+//               type="button"
+//               onClick={() => setMode(mode === "login" ? "register" : "login")}
+//               className="ml-1 text-primary hover:underline"
+//             >
+//               {mode === "login" ? "Sign up" : "Sign in"}
+//             </button>
+//           </p>
+
+//           {mode === "login" && (
+//             <div className="mt-6 pt-6 border-t border-border">
+//               <p className="text-xs dark mb-3 font-semibold">Quick Dev Login (Password: dev)</p>
+//               <div className="grid grid-cols-2 gap-2">
+//                 {devCredentials.map((cred) => (
+//                   <Button
+//                     key={cred.email}
+//                     type="button"
+//                     variant="outline"
+//                     size="sm"
+//                     disabled={isLoading}
+//                     onClick={() => handleDevLogin(cred.email)}
+//                     className="text-xs"
+//                   >
+//                     {cred.role}
+//                   </Button>
+//                 ))}
+//               </div>
+//             </div>
+//           )}
+//         </form>
+//       </DialogContent>
+//     </Dialog>
+//   )
+// }
+
+
+"use client"
+
+import type React from "react"
+import { useState } from "react"
+import { useAuth } from "@/lib/auth-context"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useToast } from "@/hooks/use-toast"
+import { Utensils, ChefHat, Bike, Shield } from "lucide-react"
+
+// 🔐 SHA-256 hashing helper
+async function sha256(str: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(str)
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("")
+}
+
+interface AuthModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  mode: "login" | "register"
+}
+
+export function AuthModal({ open, onOpenChange, mode: initialMode }: AuthModalProps) {
+  const [mode, setMode] = useState<"login" | "register">(initialMode)
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<string>("")
+  const { login, register } = useAuth()
+  const { toast } = useToast()
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+    phone: "",
+  })
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      console.log("[v0] Submitting auth form", { mode, email: formData.email, role: selectedRole })
+      const hashedPassword = await sha256(formData.password)
+
+      if (mode === "login") {
+        await login(formData.email, hashedPassword)
+      } else {
+        await register(formData.email, hashedPassword, formData.fullName, formData.phone, selectedRole)
+      }
+
+      toast({
+        title: "Success",
+        description: mode === "login" ? "Logged in successfully" : "Account created successfully",
+      })
+
+      onOpenChange(false)
+      setSelectedRole("")
+      setFormData({ email: "", password: "", fullName: "", phone: "" })
+    } catch (error: any) {
+      console.error("[v0] Auth error:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const roles = [
+    { id: "customer", name: "Customer", icon: Utensils, color: "text-orange-500" },
+    { id: "restaurant", name: "Restaurant", icon: ChefHat, color: "text-red-500" },
+    { id: "delivery_agent", name: "Delivery Agent", icon: Bike, color: "text-green-500" },
+    { id: "admin", name: "Admin", icon: Shield, color: "text-blue-500" },
+  ]
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>
+            {selectedRole
+              ? mode === "login"
+                ? "Welcome Back"
+                : "Create Account"
+              : "Select Your Role"}
+          </DialogTitle>
+          <DialogDescription>
+            {selectedRole
+              ? mode === "login"
+                ? "Sign in to your account"
+                : `Sign up as ${selectedRole.replace("_", " ")}`
+              : "Choose how you want to use FoodFlow"}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Step 1: Role Selection */}
+        {!selectedRole && (
+          <div className="grid grid-cols-1 gap-3">
+            {roles.map((role) => {
+              const Icon = role.icon
+              return (
+                <Button
+                  key={role.id}
+                  variant="outline"
+                  onClick={() => setSelectedRole(role.id)}
+                  className="flex items-center justify-start gap-3 py-3 border border-border hover:bg-muted transition"
+                >
+                  <Icon className={`w-6 h-6 ${role.color}`} />
+                  <span className="font-medium text-foreground">{role.name}</span>
+                </Button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Step 2: Auth Form */}
+        {selectedRole && (
+          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            {mode === "register" && (
+              <>
+                <Input
+                  placeholder="Full Name"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  required
+                />
+                <Input
+                  placeholder="Phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                />
+              </>
+            )}
+
+            <Input
+              placeholder="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+            />
+
+            <Input
+              placeholder="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
+            />
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Loading..." : mode === "login" ? "Sign In" : "Create Account"}
+            </Button>
+
+            <div className="text-center text-sm dark">
+              {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
+              <button
+                type="button"
+                onClick={() => setMode(mode === "login" ? "register" : "login")}
+                className="text-primary-dark hover:underline"
+              >
+                {mode === "login" ? "Sign up" : "Sign in"}
+              </button>
+            </div>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setSelectedRole("")}
+                className="text-xs dark hover:underline mt-2"
+              >
+                ← Change Role
+              </button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
