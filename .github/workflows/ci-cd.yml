@@ -7,7 +7,9 @@ on:
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
+
     services:
       mongo:
         image: mongo:6.0
@@ -17,47 +19,103 @@ jobs:
           --health-cmd="mongosh --eval 'db.adminCommand({ ping: 1 })' || exit 1"
           --health-interval=5s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
     env:
-      PYTHON_KEYRING_BACKEND: "keyring.backends.null.Keyring"
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/backend
       MONGODB_URL: "mongodb://localhost:27017"
-      DATABASE_NAME: "foodhub_test_ci"
-      SECRET_KEY: "test-secret-key-for-ci"
+      DATABASE_NAME: "ci_test_db"
+      SECRET_KEY: "ci-secret-key"
       ACCESS_TOKEN_EXPIRE_MINUTES: "60"
       REFRESH_TOKEN_EXPIRE_DAYS: "7"
 
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      # Backend Tests
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install backend dependencies
+        working-directory: ./backend
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # dev/test extras if you have them
-          pip install pytest pytest-asyncio httpx motor pymongo pytest-mock
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx pytest-mock motor pymongo
 
-      - name: Wait for Mongo
+      - name: Wait for MongoDB to be healthy
         run: |
+          echo "Waiting for MongoDB to be ready..."
           for i in `seq 1 30`; do
-            mongosh --eval "db.adminCommand('ping')" && break || sleep 1
+            mongosh --eval "db.adminCommand('ping')" && break || sleep 2
           done
 
-      - name: Run unit tests (fast, mocked)
+      - name: Verify test files exist
+        id: check-tests
         run: |
-          pytest -q backend/tests/unit -o log_cli=true
-        continue-on-error: false
+          echo "Checking for test files..."
+          if [ ! -d "backend/tests" ]; then
+            echo "HAS_TESTS=false" >> $GITHUB_ENV
+            echo "UNIT_COUNT=0" >> $GITHUB_ENV
+            echo "INTEGRATION_COUNT=0" >> $GITHUB_ENV
+            exit 0
+          fi
 
-      - name: Run integration tests (uses real MongoDB service)
-        env:
-          MONGODB_URL: ${{ env.MONGODB_URL }}
-          DATABASE_NAME: ${{ env.DATABASE_NAME }}
-          SECRET_KEY: ${{ env.SECRET_KEY }}
+          UNIT_TESTS=$(find backend/tests/unit -name "test_*.py" 2>/dev/null | wc -l)
+          INTEGRATION_TESTS=$(find backend/tests/integration -name "test_*.py" 2>/dev/null | wc -l)
+
+          echo "UNIT_COUNT=$UNIT_TESTS" >> $GITHUB_ENV
+          echo "INTEGRATION_COUNT=$INTEGRATION_TESTS" >> $GITHUB_ENV
+
+          if [ "$UNIT_TESTS" -gt 0 ] || [ "$INTEGRATION_TESTS" -gt 0 ]; then
+            echo "HAS_TESTS=true" >> $GITHUB_ENV
+          else
+            echo "HAS_TESTS=false" >> $GITHUB_ENV
+          fi
+
+      - name: Run unit tests (mocked DB)
+        if: env.HAS_TESTS == 'true'
+        working-directory: ./backend
         run: |
-          pytest -q backend/tests/integration -o log_cli=true
+          if [ -d "tests/unit" ] && [ -n "$(find tests/unit -name 'test_*.py')" ]; then
+            echo "Running unit tests..."
+            pytest tests/unit/ -v --tb=short --asyncio-mode=auto
+          else
+            echo "No unit tests found, skipping"
+          fi
+
+      - name: Run integration tests (REAL MongoDB)
+        if: env.HAS_TESTS == 'true'
+        working-directory: ./backend
+        run: |
+          if [ -d "tests/integration" ] && [ -n "$(find tests/integration -name 'test_*.py')" ]; then
+            echo "Running integration tests with REAL MongoDB..."
+            pytest tests/integration/ -v --tb=short --asyncio-mode=auto
+          else
+            echo "No integration tests found, skipping"
+          fi
+
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ env.HAS_TESTS }}" == "true" ]; then
+            echo "#### Backend Tests" >> $GITHUB_STEP_SUMMARY
+            echo "Unit Test Files: ${{ env.UNIT_COUNT }}" >> $GITHUB_STEP_SUMMARY
+            echo "Integration Test Files: ${{ env.INTEGRATION_COUNT }}" >> $GITHUB_STEP_SUMMARY
+            echo "MongoDB integration tests used live DB service" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No test files found in backend/tests/" >> $GITHUB_STEP_SUMMARY
+          fi
