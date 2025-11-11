@@ -3,7 +3,7 @@ Integration tests for order cancellation functionality.
 Tests the full API endpoint with a mock database.
 """
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from bson import ObjectId
 from datetime import datetime
 from main import app
@@ -11,11 +11,12 @@ from database import db
 from utils.dependencies import get_current_user_http
 
 # -------------------------
-# Test Client (Async)
+# Async Test Client (works on ALL httpx versions)
 # -------------------------
 @pytest.fixture
 async def client():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
@@ -117,7 +118,6 @@ async def test_cancel_order_endpoint_success(client, create_test_order, mock_use
     order = create_test_order
     order_id = str(order["_id"])
 
-    # Override auth
     app.dependency_overrides[get_current_user_http] = lambda: mock_user_data
 
     response = await client.post(f"/api/orders/{order_id}/cancel")
@@ -127,9 +127,7 @@ async def test_cancel_order_endpoint_success(client, create_test_order, mock_use
     assert json_data["message"] == "Order cancelled successfully"
     assert json_data["status"] == "cancelled"
 
-    # Check database
     updated = await db.orders.find_one({"_id": ObjectId(order_id)})
-    assert updated is not None
     assert updated["status"] == "cancelled"
     assert "cancelled_at" in updated
 
@@ -241,7 +239,6 @@ async def test_cancel_order_endpoint_all_cancellable_statuses(client, mock_user_
         assert response.status_code == 200, f"Failed for status: {status}"
         assert response.json()["status"] == "cancelled"
 
-        # Verify DB
         updated = await db.orders.find_one({"_id": ObjectId(order_id)})
         assert updated["status"] == "cancelled"
 
