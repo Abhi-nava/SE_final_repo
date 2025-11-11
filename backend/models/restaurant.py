@@ -1,15 +1,19 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class ItemAvailability(str, Enum):
     AVAILABLE = "available"
     OUT_OF_STOCK = "out_of_stock"
     DISCONTINUED = "discontinued"
 
+
 class MenuItem(BaseModel):
     """Menu item schema"""
+
     id: str = Field(default=None, alias="_id")
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = None
@@ -21,12 +25,14 @@ class MenuItem(BaseModel):
     is_vegan: bool = False
     preparation_time: int = Field(default=30, description="in minutes")
     daily_count: int = 0
-    
+
     class Config:
         populate_by_name = True
 
+
 class MenuItemUpdate(BaseModel):
     """Menu item update schema"""
+
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
@@ -38,8 +44,10 @@ class MenuItemUpdate(BaseModel):
     preparation_time: Optional[int] = None
     daily_count: int | None = None
 
+
 class RestaurantCreate(BaseModel):
     """Restaurant creation schema"""
+
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
     phone: str = Field(..., min_length=10)
@@ -51,8 +59,10 @@ class RestaurantCreate(BaseModel):
     opening_time: str = "09:00"  # HH:MM format
     closing_time: str = "23:00"
 
+
 class RestaurantUpdate(BaseModel):
     """Restaurant update schema"""
+
     name: Optional[str] = None
     description: Optional[str] = None
     phone: Optional[str] = None
@@ -60,8 +70,10 @@ class RestaurantUpdate(BaseModel):
     closing_time: Optional[str] = None
     image_url: Optional[str] = None
 
+
 class RestaurantResponse(BaseModel):
     """Restaurant response schema"""
+
     id: str = Field(alias="_id")
     owner_id: str
     name: str
@@ -79,6 +91,6 @@ class RestaurantResponse(BaseModel):
     is_active: bool = True
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         populate_by_name = True

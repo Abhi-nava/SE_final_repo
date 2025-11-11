@@ -1,6 +1,8 @@
-from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+
+from pydantic import BaseModel
+
 
 class MenuItemResponse(BaseModel):
     id: str
@@ -16,4 +18,4 @@ class MenuItemResponse(BaseModel):
     preparation_time: int
     created_at: datetime
     updated_at: datetime
-    daily_count:int 
+    daily_count: int

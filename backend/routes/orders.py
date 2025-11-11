@@ -1,13 +1,17 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from models.order import OrderCreate, OrderResponse, OrderStatusUpdate, OrderStatus
-from utils.dependencies import get_current_user_http, get_current_restaurant_owner, get_current_customer
-from utils.notifications import NotificationService, NotificationType
-from utils.payment import PaymentService
-from database import db
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
 from bson import ObjectId
-from datetime import datetime, timezone, timedelta
-from decimal import Decimal
+from database import db
+from fastapi import APIRouter, Depends, HTTPException, status
+from models.order import OrderCreate, OrderResponse, OrderStatus, OrderStatusUpdate
+from utils.dependencies import (
+    get_current_customer,
+    get_current_restaurant_owner,
+    get_current_user_http,
+)
+from utils.notifications import NotificationService, NotificationType
+from utils.payment import PaymentService
 
 router = APIRouter()
 
@@ -24,60 +28,64 @@ DELIVERY_FEE = 50  # Base delivery fee in rupees
 
 
 @router.get("/details/{order_id}")
-async def get_order_details(
-    order_id: str):
+async def get_order_details(order_id: str):
     """Get single order details for customer"""
     print(f"\n{'='*60}")
     print(f"{'='*60}\n")
-    
+
     try:
         order = await db.orders.find_one({"_id": ObjectId(order_id)})
         print(f"[DEBUG] Order found: {order is not None}")
-        
+
         if not order:
             print(f"[DEBUG] Order not found in database")
             raise HTTPException(status_code=404, detail="Order not found")
-        
-        print(f"[DEBUG] Order customer_id from DB: {order.get('customer_id')} (type: {type(order.get('customer_id'))})")
+
+        print(
+            f"[DEBUG] Order customer_id from DB: {order.get('customer_id')} (type: {type(order.get('customer_id'))})"
+        )
 
         # order_customer_id = str(order.get("customer_id", ""))
         # current_user_id = current_user.get("_id")  # Already a string from dependency
-        
+
         # print(f"[DEBUG] Order customer_id (string): '{order_customer_id}'")
         # print(f"[DEBUG] Current user _id (string): '{current_user_id}'")
         # print(f"[DEBUG] Are they equal? {order_customer_id == current_user_id}")
-        
+
         # # Verify ownership
         # if order_customer_id != current_user_id:
         #     print(f"[DEBUG] AUTHORIZATION FAILED!")
         #     print(f"[DEBUG] Order belongs to: {order_customer_id}")
         #     print(f"[DEBUG] Current user is: {current_user_id}")
         #     raise HTTPException(
-        #         status_code=403, 
+        #         status_code=403,
         #         detail=f"Not authorized to view this order"
         #     )
-        
+
         # print(f"[DEBUG] Authorization successful!")
-        
+
         # Get restaurant data
         restaurant = None
         try:
             restaurant = await db.restaurants.find_one(
-                {"_id": ObjectId(order["restaurant_id"])},
-                {"name": 1, "image_url": 1}
+                {"_id": ObjectId(order["restaurant_id"])}, {"name": 1, "image_url": 1}
             )
             print(f"[DEBUG] Restaurant found: {restaurant is not None}")
         except Exception as e:
             print(f"[DEBUG] Error fetching restaurant: {str(e)}")
-        
+
         response_data = {
             "id": str(order["_id"]),
             "customer_id": str(order.get("customer_id", "")),
             "restaurant_id": str(order.get("restaurant_id", "")),
-            "restaurant": {
-                "name": restaurant["name"] if restaurant else "",
-                "image": restaurant.get("image_url") if restaurant else None
-            } if restaurant else None,
+            "restaurant": (
+                {
+                    "name": restaurant["name"] if restaurant else "",
+                    "image": restaurant.get("image_url") if restaurant else None,
+                }
+                if restaurant
+                else None
+            ),
             "items": order.get("items", []),
             "subtotal": float(order.get("subtotal", 0)),
             "delivery_fee": float(order.get("delivery_fee", 0)),
@@ -88,30 +96,37 @@ async def get_order_details(
             "delivery_address": str(order.get("delivery_address", "")),
             "delivery_phone": str(order.get("delivery_phone", "")),
             "payment_method": str(order.get("payment_method", "")),
-            "delivery_agent_id": str(order.get("delivery_agent_id")) if order.get("delivery_agent_id") else None,
-            "estimated_delivery_time": int(order.get("estimated_delivery_time")) if order.get("estimated_delivery_time") else None,
+            "delivery_agent_id": (
+                str(order.get("delivery_agent_id"))
+                if order.get("delivery_agent_id")
+                else None
+            ),
+            "estimated_delivery_time": (
+                int(order.get("estimated_delivery_time"))
+                if order.get("estimated_delivery_time")
+                else None
+            ),
             "created_at": order.get("created_at"),
-            "updated_at": order.get("updated_at")
+            "updated_at": order.get("updated_at"),
         }
-        
+
         print(f"[DEBUG] Returning response successfully")
         return response_data
-        
+
     except HTTPException:
         raise
     except Exception as e:
         print(f"[DEBUG] UNEXPECTED ERROR: {str(e)}")
         print(f"[DEBUG] Error type: {type(e)}")
         import traceback
+
         print(f"[DEBUG] Traceback:\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+
 # Customer Routes
 @router.post("/create")
-async def create_order(
-    payload: dict,
-    user: dict = Depends(get_current_user_http)
-):
+async def create_order(payload: dict, user: dict = Depends(get_current_user_http)):
     """
     Create an order:
     ✅ Validate payload
@@ -121,9 +136,15 @@ async def create_order(
     """
 
     required = [
-        "restaurant_id", "items", "delivery_address",
-        "delivery_phone", "payment_method", "subtotal",
-        "delivery_fee", "discount", "total"
+        "restaurant_id",
+        "items",
+        "delivery_address",
+        "delivery_phone",
+        "payment_method",
+        "subtotal",
+        "delivery_fee",
+        "discount",
+        "total",
     ]
 
     for f in required:
@@ -154,7 +175,9 @@ async def create_order(
 
         menu_item = await db["menu_items"].find_one({"_id": ObjectId(menu_item_id)})
         if not menu_item:
-            raise HTTPException(status_code=404, detail=f"Menu item {menu_item_id} not found")
+            raise HTTPException(
+                status_code=404, detail=f"Menu item {menu_item_id} not found"
+            )
 
         # ✅ Convert daily_count to int safely
         try:
@@ -165,7 +188,7 @@ async def create_order(
         if current_count < qty:
             raise HTTPException(
                 status_code=400,
-                detail=f"{menu_item['name']} is sold out (remaining: {current_count})"
+                detail=f"{menu_item['name']} is sold out (remaining: {current_count})",
             )
 
         # ✅ Deduct count
@@ -173,15 +196,17 @@ async def create_order(
 
         await db["menu_items"].update_one(
             {"_id": ObjectId(menu_item_id)},
-            {"$set": {"daily_count": str(new_count)}}  # Store back as string
+            {"$set": {"daily_count": str(new_count)}},  # Store back as string
         )
 
-        processed_items.append({
-            "menu_item_id": menu_item_id,
-            "name": menu_item["name"],
-            "quantity": qty,
-            "price": menu_item["price"]
-        })
+        processed_items.append(
+            {
+                "menu_item_id": menu_item_id,
+                "name": menu_item["name"],
+                "quantity": qty,
+                "price": menu_item["price"],
+            }
+        )
 
     # ✅ Create order document
     order_doc = {
@@ -195,10 +220,8 @@ async def create_order(
         "delivery_address": payload["delivery_address"],
         "delivery_phone": payload["delivery_phone"],
         "payment_method": payload["payment_method"],
-
         "status": "paid",
         "order_status": "preparing",
-
         "delivery_agent_id": None,
         "estimated_delivery_time": 45,
         "created_at": datetime.utcnow(),
@@ -212,19 +235,22 @@ async def create_order(
     return {
         "id": order_doc["_id"],
         "message": "Order placed successfully",
-        "status": "paid"
+        "status": "paid",
     }
+
 
 @router.get("/my-orders", response_model=list[OrderResponse])
 async def get_my_orders(
-    current_user = Depends(get_current_user_http),
-    skip: int = 0,
-    limit: int = 20
+    current_user=Depends(get_current_user_http), skip: int = 0, limit: int = 20
 ):
     # fetch raw orders for this customer (customer_id stored as string)
-    orders = await db.orders.find({
-        "customer_id": str(current_user["_id"])
-    }).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    orders = (
+        await db.orders.find({"customer_id": str(current_user["_id"])})
+        .sort("created_at", -1)
+        .skip(skip)
+        .limit(limit)
+        .to_list(limit)
+    )
 
     response_list = []
 
@@ -232,8 +258,7 @@ async def get_my_orders(
         # safe lookups / fallbacks
         try:
             restaurant = await db.restaurants.find_one(
-                {"_id": ObjectId(o.get("restaurant_id"))},
-                {"name": 1, "image_url": 1}
+                {"_id": ObjectId(o.get("restaurant_id"))}, {"name": 1, "image_url": 1}
             )
         except Exception:
             restaurant = None
@@ -247,7 +272,7 @@ async def get_my_orders(
         discount = o.get("discount", 0.0) or 0.0
         total = o.get("total", 0.0) or 0.0
         status = o.get("status", "")
-        delivery_address = o.get("delivery_address") or ""            # <<< important fallback
+        delivery_address = o.get("delivery_address") or ""  # <<< important fallback
         delivery_phone = o.get("delivery_phone") or ""
         payment_method = o.get("payment_method") or ""
         delivery_agent_id = o.get("delivery_agent_id")
@@ -260,28 +285,43 @@ async def get_my_orders(
                 id=str(o["_id"]),
                 customer_id=str(customer_id),
                 restaurant_id=str(restaurant_id),
-                restaurant={
-                    "name": restaurant["name"] if restaurant and "name" in restaurant else "",
-                    "image": restaurant.get("image_url") if restaurant and restaurant.get("image_url") else None
-                } if restaurant else None,
+                restaurant=(
+                    {
+                        "name": (
+                            restaurant["name"]
+                            if restaurant and "name" in restaurant
+                            else ""
+                        ),
+                        "image": (
+                            restaurant.get("image_url")
+                            if restaurant and restaurant.get("image_url")
+                            else None
+                        ),
+                    }
+                    if restaurant
+                    else None
+                ),
                 items=items,
                 subtotal=float(subtotal),
                 delivery_fee=float(delivery_fee),
                 discount=float(discount),
                 total=float(total),
                 status=str(status),
-                delivery_address=str(delivery_address),     # <<< safe string
+                delivery_address=str(delivery_address),  # <<< safe string
                 delivery_phone=str(delivery_phone),
                 payment_method=str(payment_method),
                 delivery_agent_id=str(delivery_agent_id) if delivery_agent_id else None,
-                estimated_delivery_time=int(estimated_delivery_time) if estimated_delivery_time is not None else None,
+                estimated_delivery_time=(
+                    int(estimated_delivery_time)
+                    if estimated_delivery_time is not None
+                    else None
+                ),
                 created_at=created_at,
-                updated_at=updated_at
+                updated_at=updated_at,
             )
         )
 
     return response_list
-
 
 
 # @router.get("/my-orders", response_model=list[OrderResponse])
@@ -330,11 +370,13 @@ async def get_my_orders(
 #     return response_list
 
 
-
 # Restaurant Routes
 
+
 @router.get("/dashboard-summary")
-async def restaurant_dashboard_summary(current_user = Depends(get_current_restaurant_owner)):
+async def restaurant_dashboard_summary(
+    current_user=Depends(get_current_restaurant_owner),
+):
     restaurant = await db.restaurants.find_one({"owner_id": str(current_user["_id"])})
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
@@ -344,22 +386,26 @@ async def restaurant_dashboard_summary(current_user = Depends(get_current_restau
     # Load orders
     orders = await db.orders.find({"restaurant_id": restaurant_id}).to_list(None)
     total_orders = len(orders)
-    pending_orders = len([o for o in orders if o["status"] not in ["delivered", "cancelled"]])
+    pending_orders = len(
+        [o for o in orders if o["status"] not in ["delivered", "cancelled"]]
+    )
     completed_today = len([o for o in orders if o["status"] == "delivered"])
     revenue_today = sum([o["total"] for o in orders if o["status"] == "delivered"])
 
     # Ratings aggregate
     pipeline = [
         {"$match": {"restaurant_id": restaurant_id}},
-        {"$group": {
-            "_id": "$restaurant_id",
-            "count": {"$sum": 1},
-            "avg_restaurant": {"$avg": "$restaurant_rating"},
-            "avg_delivery": {"$avg": "$delivery_rating"},
-            "avg_food_quality": {"$avg": "$food_quality"},
-            "avg_delivery_speed": {"$avg": "$delivery_speed"},
-            "avg_packaging_quality": {"$avg": "$packaging_quality"},
-        }}
+        {
+            "$group": {
+                "_id": "$restaurant_id",
+                "count": {"$sum": 1},
+                "avg_restaurant": {"$avg": "$restaurant_rating"},
+                "avg_delivery": {"$avg": "$delivery_rating"},
+                "avg_food_quality": {"$avg": "$food_quality"},
+                "avg_delivery_speed": {"$avg": "$delivery_speed"},
+                "avg_packaging_quality": {"$avg": "$packaging_quality"},
+            }
+        },
     ]
 
     ratings = await db.ratings.aggregate(pipeline).to_list(1)
@@ -396,34 +442,43 @@ async def restaurant_dashboard_summary(current_user = Depends(get_current_restau
             "total_orders": total_orders,
             "pending_orders": pending_orders,
             "completed_today": completed_today,
-            "revenue_today": revenue_today
+            "revenue_today": revenue_today,
         },
-        "ratings": ratings_summary
+        "ratings": ratings_summary,
     }
 
 
 # --- NEW: ratings summary for a restaurant (avg scores + counts) ---
 @router.get("/restaurant/ratings/summary")
-async def get_ratings_summary(current_user = Depends(get_current_restaurant_owner)):
+async def get_ratings_summary(current_user=Depends(get_current_restaurant_owner)):
     restaurant = await db.restaurants.find_one({"owner_id": str(current_user["_id"])})
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
 
     pipeline = [
         {"$match": {"restaurant_id": str(restaurant["_id"])}},
-        {"$group": {
-            "_id": "$restaurant_id",
-            "count": {"$sum": 1},
-            "avg_restaurant": {"$avg": "$restaurant_rating"},
-            "avg_delivery": {"$avg": "$delivery_rating"},
-            "avg_food_quality": {"$avg": "$food_quality"},
-            "avg_delivery_speed": {"$avg": "$delivery_speed"},
-            "avg_packaging_quality": {"$avg": "$packaging_quality"},
-        }}
+        {
+            "$group": {
+                "_id": "$restaurant_id",
+                "count": {"$sum": 1},
+                "avg_restaurant": {"$avg": "$restaurant_rating"},
+                "avg_delivery": {"$avg": "$delivery_rating"},
+                "avg_food_quality": {"$avg": "$food_quality"},
+                "avg_delivery_speed": {"$avg": "$delivery_speed"},
+                "avg_packaging_quality": {"$avg": "$packaging_quality"},
+            }
+        },
     ]
     agg = await db.ratings.aggregate(pipeline).to_list(1)
     if not agg:
-        return {"count": 0, "avg_restaurant": 0, "avg_delivery": 0, "avg_food_quality": 0, "avg_delivery_speed": 0, "avg_packaging_quality": 0}
+        return {
+            "count": 0,
+            "avg_restaurant": 0,
+            "avg_delivery": 0,
+            "avg_food_quality": 0,
+            "avg_delivery_speed": 0,
+            "avg_packaging_quality": 0,
+        }
     x = agg[0]
     return {
         "count": x["count"],
@@ -433,8 +488,6 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
         "avg_delivery_speed": round(x["avg_delivery_speed"], 2),
         "avg_packaging_quality": round(x["avg_packaging_quality"], 2),
     }
-
-
 
 
 # @router.get("/restaurant-ratings")
@@ -448,7 +501,6 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
 #     }).to_list(None)
 
 #     return ratings
-
 
 
 # @router.post("/{order_id}/process-payment", response_model=dict)
@@ -465,25 +517,25 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
 #             status_code=status.HTTP_404_NOT_FOUND,
 #             detail="Order not found"
 #         )
-    
+
 #     if not order:
 #         raise HTTPException(
 #             status_code=status.HTTP_404_NOT_FOUND,
 #             detail="Order not found"
 #         )
-    
+
 #     if order["customer_id"] != str(current_user["_id"]):
 #         raise HTTPException(
 #             status_code=status.HTTP_403_FORBIDDEN,
 #             detail="Not authorized"
 #         )
-    
+
 #     payment_result = await PaymentService.process_payment(
 #         payment_id=order.get("payment_id"),
 #         payment_method=order["payment_method"],
 #         payment_details=payment_details
 #     )
-    
+
 #     if payment_result["status"] in ["success", "pending"]:
 #         await db.orders.update_one(
 #             {"_id": ObjectId(order_id)},
@@ -494,7 +546,7 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
 #                 }
 #             }
 #         )
-        
+
 #         await NotificationService.send_notification(
 #             user_id=order["customer_id"],
 #             notification_type=NotificationType.ORDER_CONFIRMED,
@@ -502,7 +554,7 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
 #             message="Your order has been confirmed by the restaurant",
 #             data={"order_id": order_id}
 #         )
-        
+
 #         return {
 #             "status": "success",
 #             "message": "Payment processed successfully",
@@ -525,20 +577,20 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
 # #             status_code=status.HTTP_404_NOT_FOUND,
 # #             detail="Order not found"
 # #         )
-    
+
 # #     if not order:
 # #         raise HTTPException(
 # #             status_code=status.HTTP_404_NOT_FOUND,
 # #             detail="Order not found"
 # #         )
-    
+
 # #     # Verify ownership
 # #     if order["customer_id"] != str(current_user["_id"]):
 # #         raise HTTPException(
 # #             status_code=status.HTTP_403_FORBIDDEN,
 # #             detail="Not authorized to view this order"
 # #         )
-    
+
 # #     return OrderResponse(
 # #         id=str(order["_id"]),
 # #         customer_id=order["customer_id"],
@@ -572,25 +624,25 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
 #             status_code=status.HTTP_404_NOT_FOUND,
 #             detail="Order not found"
 #         )
-    
+
 #     if not order:
 #         raise HTTPException(
 #             status_code=status.HTTP_404_NOT_FOUND,
 #             detail="Order not found"
 #         )
-    
+
 #     if order["customer_id"] != str(current_user["_id"]):
 #         raise HTTPException(
 #             status_code=status.HTTP_403_FORBIDDEN,
 #             detail="Not authorized"
 #         )
-    
+
 #     if order["status"] not in [OrderStatus.PENDING.value, OrderStatus.CONFIRMED.value]:
 #         raise HTTPException(
 #             status_code=status.HTTP_400_BAD_REQUEST,
 #             detail="Order cannot be cancelled at this stage"
 #         )
-    
+
 #     await db.orders.update_one(
 #         {"_id": ObjectId(order_id)},
 #         {
@@ -600,7 +652,7 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
 #             }
 #         }
 #     )
-    
+
 #     await NotificationService.send_notification(
 #         user_id=order["customer_id"],
 #         notification_type=NotificationType.ORDER_CANCELLED,
@@ -608,14 +660,15 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
 #         message="Your order has been cancelled",
 #         data={"order_id": order_id}
 #     )
-    
+
 #     if order.get("payment_id"):
 #         await PaymentService.refund_payment(
 #             payment_id=order["payment_id"],
 #             reason="Order cancelled by customer"
 #         )
-    
+
 #     return {"message": "Order cancelled successfully"}
+
 
 def safe_str(val):
     if val is None:
@@ -623,6 +676,7 @@ def safe_str(val):
     if isinstance(val, ObjectId):
         return str(val)
     return str(val)
+
 
 # @router.get("/restaurant", response_model=list[OrderResponse])
 # async def get_restaurant_orders1(current_user = Depends(get_current_restaurant_owner)):
@@ -670,17 +724,22 @@ def safe_str(val):
 
 
 @router.get("/restaurant/orders")
-async def get_restaurant_orders(current_user = Depends(get_current_restaurant_owner)):
+async def get_restaurant_orders(current_user=Depends(get_current_restaurant_owner)):
     """Fetch all active orders belonging to the restaurant (excludes cancelled)"""
-    restaurant = await db.restaurants.find_one({"owner_id": ObjectId(current_user["_id"])})
+    restaurant = await db.restaurants.find_one(
+        {"owner_id": ObjectId(current_user["_id"])}
+    )
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
 
     # Exclude cancelled orders from the active list
-    orders = await db.orders.find({
-        "restaurant_id": str(restaurant["_id"]),
-        "status": {"$ne": "cancelled"}
-    }).sort("created_at", -1).to_list(None)
+    orders = (
+        await db.orders.find(
+            {"restaurant_id": str(restaurant["_id"]), "status": {"$ne": "cancelled"}}
+        )
+        .sort("created_at", -1)
+        .to_list(None)
+    )
 
     return [
         {
@@ -691,16 +750,15 @@ async def get_restaurant_orders(current_user = Depends(get_current_restaurant_ow
             "delivery_address": o.get("delivery_address", ""),
             "delivery_phone": o.get("delivery_phone", ""),
             "created_at": o["created_at"],
-            "delivery_agent_id": o.get("delivery_agent_id")
+            "delivery_agent_id": o.get("delivery_agent_id"),
         }
         for o in orders
     ]
 
+
 @router.put("/restaurant/order/{order_id}/status")
 async def update_order_statu1(
-    order_id: str,
-    payload: dict,
-    current_user = Depends(get_current_restaurant_owner)
+    order_id: str, payload: dict, current_user=Depends(get_current_restaurant_owner)
 ):
     new_status = payload.get("order_status")
     if not new_status:
@@ -708,9 +766,14 @@ async def update_order_statu1(
 
     allowed_statuses = ["preparing", "searching", "arriving", "in-transit", "delivered"]
     if new_status not in allowed_statuses:
-        raise HTTPException(status_code=400, detail=f"Invalid order_status. Must be one of {allowed_statuses}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid order_status. Must be one of {allowed_statuses}",
+        )
 
-    restaurant = await db.restaurants.find_one({"owner_id": ObjectId(current_user["_id"])})
+    restaurant = await db.restaurants.find_one(
+        {"owner_id": ObjectId(current_user["_id"])}
+    )
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
 
@@ -729,18 +792,18 @@ async def update_order_statu1(
         "searching": ["arriving"],  # after assignment
         "arriving": ["in-transit"],
         "in-transit": ["delivered"],
-        "delivered": []
+        "delivered": [],
     }
 
     if new_status not in transitions.get(current_status, []):
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot transition from {current_status} to {new_status}"
+            detail=f"Cannot transition from {current_status} to {new_status}",
         )
 
     await db.orders.update_one(
         {"_id": ObjectId(order_id)},
-        {"$set": {"order_status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"order_status": new_status, "updated_at": datetime.utcnow()}},
     )
 
     return {"message": f"Order status updated to {new_status}"}
@@ -748,20 +811,30 @@ async def update_order_statu1(
 
 @router.put("/restaurant/order/{order_id}/status")
 async def update_order_status(
-    order_id: str,
-    payload: dict,
-    current_user = Depends(get_current_restaurant_owner)
+    order_id: str, payload: dict, current_user=Depends(get_current_restaurant_owner)
 ):
     """Update order_status with extended logic"""
     new_status = payload.get("order_status")
     if not new_status:
         raise HTTPException(status_code=400, detail="order_status required")
 
-    valid_statuses = ["preparing", "searching", "arriving", "waiting", "in-transit", "delivered"]
+    valid_statuses = [
+        "preparing",
+        "searching",
+        "arriving",
+        "waiting",
+        "in-transit",
+        "delivered",
+    ]
     if new_status not in valid_statuses:
-        raise HTTPException(status_code=400, detail=f"Invalid order_status. Must be one of {valid_statuses}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid order_status. Must be one of {valid_statuses}",
+        )
 
-    restaurant = await db.restaurants.find_one({"owner_id": ObjectId(current_user["_id"])})
+    restaurant = await db.restaurants.find_one(
+        {"owner_id": ObjectId(current_user["_id"])}
+    )
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
 
@@ -774,62 +847,62 @@ async def update_order_status(
 
     await db.orders.update_one(
         {"_id": ObjectId(order_id)},
-        {"$set": {"order_status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"order_status": new_status, "updated_at": datetime.utcnow()}},
     )
 
     return {"message": f"Order status updated to {new_status}"}
+
 
 @router.put("/{order_id}/status", response_model=dict)
 async def update_order_status(
     order_id: str,
     status_update: OrderStatusUpdate,
-    current_user = Depends(get_current_restaurant_owner)
+    current_user=Depends(get_current_restaurant_owner),
 ):
     """Update order status by restaurant"""
     try:
         order = await db.orders.find_one({"_id": ObjectId(order_id)})
     except:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Order not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
         )
-    
+
     if not order:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Order not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Order not found"
         )
-    
-    restaurant = await db.restaurants.find_one({"owner_id": ObjectId(current_user["_id"])})
+
+    restaurant = await db.restaurants.find_one(
+        {"owner_id": ObjectId(current_user["_id"])}
+    )
     if order["restaurant_id"] != ObjectId(restaurant["_id"]):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized"
         )
-    
+
     await db.orders.update_one(
         {"_id": ObjectId(order_id)},
         {
             "$set": {
                 "status": status_update.status.value,
-                "updated_at": datetime.now(timezone.utc)
+                "updated_at": datetime.now(timezone.utc),
             }
-        }
+        },
     )
-    
-    await NotificationService.notify_order_status_change(
-        order_id=order_id,
-        new_status=status_update.status.value
-    )
-    
-    return {"message": f"Order status updated to {status_update.status.value}"}
 
+    await NotificationService.notify_order_status_change(
+        order_id=order_id, new_status=status_update.status.value
+    )
+
+    return {"message": f"Order status updated to {status_update.status.value}"}
 
 
 # --- NEW: list verified agents for assignment (used by restaurant UI) ---
 @router.get("/restaurant/agents")
-async def list_verified_agents(current_user = Depends(get_current_restaurant_owner)):
-    restaurant = await db.restaurants.find_one({"owner_id": ObjectId(current_user["_id"])})
+async def list_verified_agents(current_user=Depends(get_current_restaurant_owner)):
+    restaurant = await db.restaurants.find_one(
+        {"owner_id": ObjectId(current_user["_id"])}
+    )
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
 
@@ -837,19 +910,22 @@ async def list_verified_agents(current_user = Depends(get_current_restaurant_own
 
     def safe_str(val):
         from bson import ObjectId
+
         if isinstance(val, ObjectId):
             return str(val)
         return val
 
     result = []
     for a in agents:
-        result.append({
-            "id": str(a["_id"]),
-            "user_id": safe_str(a.get("user_id")),
-            "name": a.get("name", "Unknown Agent"),
-            "rating": float(a.get("rating", 0.0)),
-            "vehicle_number": a.get("vehicle_number", "N/A")
-        })
+        result.append(
+            {
+                "id": str(a["_id"]),
+                "user_id": safe_str(a.get("user_id")),
+                "name": a.get("name", "Unknown Agent"),
+                "rating": float(a.get("rating", 0.0)),
+                "vehicle_number": a.get("vehicle_number", "N/A"),
+            }
+        )
 
     return result
 
@@ -911,7 +987,9 @@ async def list_verified_agents(current_user = Depends(get_current_restaurant_own
 
 # # --- NEW: restaurant-side order details (includes customer basics) ---
 @router.get("/restaurant/{order_id}")
-async def get_restaurant_order_details(order_id: str, current_user = Depends(get_current_restaurant_owner)):
+async def get_restaurant_order_details(
+    order_id: str, current_user=Depends(get_current_restaurant_owner)
+):
     try:
         order = await db.orders.find_one({"_id": ObjectId(order_id)})
     except:
@@ -919,29 +997,38 @@ async def get_restaurant_order_details(order_id: str, current_user = Depends(get
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    restaurant = await db.restaurants.find_one({"_id": ObjectId(order["restaurant_id"])})
+    restaurant = await db.restaurants.find_one(
+        {"_id": ObjectId(order["restaurant_id"])}
+    )
     if not restaurant or restaurant["owner_id"] != ObjectId(current_user["_id"]):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    customer = await db.users.find_one({"_id": ObjectId(order["customer_id"])}, {"name": 1, "phone": 1})
+    customer = await db.users.find_one(
+        {"_id": ObjectId(order["customer_id"])}, {"name": 1, "phone": 1}
+    )
     return {
         **{k: v for k, v in order.items() if k != "_id"},
         "id": str(order["_id"]),
-        "customer": {"name": customer.get("name",""), "phone": customer.get("phone","")} if customer else None
+        "customer": (
+            {"name": customer.get("name", ""), "phone": customer.get("phone", "")}
+            if customer
+            else None
+        ),
     }
+
 
 @router.post("/{order_id}/assign-agent")
 async def assign_delivery_agent(
-    order_id: str,
-    body: dict,
-    current_user = Depends(get_current_restaurant_owner)
+    order_id: str, body: dict, current_user=Depends(get_current_restaurant_owner)
 ):
     """Assign agent and automatically move to 'arriving'"""
     agent_id = body.get("delivery_agent_id")
     if not agent_id:
         raise HTTPException(status_code=400, detail="delivery_agent_id required")
 
-    restaurant = await db.restaurants.find_one({"owner_id": ObjectId(current_user["_id"])})
+    restaurant = await db.restaurants.find_one(
+        {"owner_id": ObjectId(current_user["_id"])}
+    )
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
 
@@ -952,7 +1039,9 @@ async def assign_delivery_agent(
     if str(order["restaurant_id"]) != str(restaurant["_id"]):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    agent = await db.delivery_agents.find_one({"_id": ObjectId(agent_id), "is_verified": True})
+    agent = await db.delivery_agents.find_one(
+        {"_id": ObjectId(agent_id), "is_verified": True}
+    )
     if not agent:
         raise HTTPException(status_code=404, detail="Delivery agent not found")
 
@@ -964,7 +1053,7 @@ async def assign_delivery_agent(
                 "order_status": "arriving",  # 🚀 move directly to arriving
                 "updated_at": datetime.utcnow(),
             }
-        }
+        },
     )
 
     return {"message": "Agent assigned, driver arriving", "order_status": "arriving"}
@@ -972,31 +1061,30 @@ async def assign_delivery_agent(
 
 # ✅ NEW: Cancel order by customer
 @router.post("/{order_id}/cancel")
-async def cancel_order(
-    order_id: str,
-    current_user = Depends(get_current_user_http)
-):
+async def cancel_order(order_id: str, current_user=Depends(get_current_user_http)):
     """Cancel an order by customer"""
     try:
         order = await db.orders.find_one({"_id": ObjectId(order_id)})
     except:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     # Verify ownership
     if str(order["customer_id"]) != str(current_user["_id"]):
-        raise HTTPException(status_code=403, detail="Not authorized to cancel this order")
-    
+        raise HTTPException(
+            status_code=403, detail="Not authorized to cancel this order"
+        )
+
     # Check if order can be cancelled
     cancellable_statuses = ["paid", "pending", "confirmed"]
     if order["status"] not in cancellable_statuses:
         raise HTTPException(
             status_code=400,
-            detail=f"Order with status '{order['status']}' cannot be cancelled"
+            detail=f"Order with status '{order['status']}' cannot be cancelled",
         )
-    
+
     # Update order status to cancelled
     await db.orders.update_one(
         {"_id": ObjectId(order_id)},
@@ -1004,11 +1092,9 @@ async def cancel_order(
             "$set": {
                 "status": "cancelled",
                 "cancelled_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.utcnow(),
             }
-        }
+        },
     )
-    
+
     return {"message": "Order cancelled successfully", "status": "cancelled"}
-
-

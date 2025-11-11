@@ -1,25 +1,31 @@
 print("[STARTUP] restaurants.py is being imported")
-from fastapi import APIRouter, HTTPException, status, Depends
+from datetime import datetime, timezone
+
+from bson import ObjectId
+from database import db
+from fastapi import APIRouter, Depends, HTTPException, status
+from models.menu_items import MenuItemResponse
 from models.restaurant import (
-    RestaurantCreate, RestaurantUpdate, RestaurantResponse,
-    MenuItem, MenuItemUpdate
+    MenuItem,
+    MenuItemUpdate,
+    RestaurantCreate,
+    RestaurantResponse,
+    RestaurantUpdate,
 )
 from utils.dependencies import get_current_restaurant_owner
-from database import db
-from bson import ObjectId
-from datetime import datetime, timezone
-from models.menu_items import MenuItemResponse  
 
 router = APIRouter()
 print("[STARTUP] Router created in restaurants.py")
+
+
 @router.post("/create", response_model=RestaurantResponse)
 async def create_restaurant(
     restaurant_data: RestaurantCreate,
-    current_user = Depends(get_current_restaurant_owner)
+    current_user=Depends(get_current_restaurant_owner),
 ):
     """Create a new restaurant"""
     now = datetime.now(timezone.utc)
-    
+
     restaurant_doc = {
         "owner_id": str(current_user["_id"]),
         "name": restaurant_data.name,
@@ -36,29 +42,29 @@ async def create_restaurant(
         "total_ratings": 0,
         "is_active": True,
         "created_at": now,
-        "updated_at": now
+        "updated_at": now,
     }
-    
+
     result = await db.restaurants.insert_one(restaurant_doc)
     restaurant_doc["_id"] = result.inserted_id
-    
+
     return RestaurantResponse(
         id=str(result.inserted_id),
         owner_id=str(current_user["_id"]),
-        **{k: v for k, v in restaurant_data.dict().items()}
+        **{k: v for k, v in restaurant_data.dict().items()},
     )
 
+
 @router.get("/my-restaurant", response_model=RestaurantResponse)
-async def get_my_restaurant(current_user = Depends(get_current_restaurant_owner)):
+async def get_my_restaurant(current_user=Depends(get_current_restaurant_owner)):
     """Get current user's restaurant"""
     restaurant = await db.restaurants.find_one({"owner_id": str(current_user["_id"])})
-    
+
     if not restaurant:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Restaurant not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found"
         )
-    
+
     return RestaurantResponse(
         id=str(restaurant["_id"]),
         owner_id=restaurant["owner_id"],
@@ -75,33 +81,31 @@ async def get_my_restaurant(current_user = Depends(get_current_restaurant_owner)
         rating=restaurant.get("rating", 0.0),
         total_ratings=restaurant.get("total_ratings", 0),
         created_at=restaurant["created_at"],
-        updated_at=restaurant["updated_at"]
+        updated_at=restaurant["updated_at"],
     )
+
 
 @router.put("/my-restaurant", response_model=RestaurantResponse)
 async def update_my_restaurant(
-    update_data: RestaurantUpdate,
-    current_user = Depends(get_current_restaurant_owner)
+    update_data: RestaurantUpdate, current_user=Depends(get_current_restaurant_owner)
 ):
     """Update restaurant details"""
     restaurant = await db.restaurants.find_one({"owner_id": str(current_user["_id"])})
-    
+
     if not restaurant:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Restaurant not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found"
         )
-    
+
     update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
     if update_dict:
         update_dict["updated_at"] = datetime.now(timezone.utc)
         await db.restaurants.update_one(
-            {"_id": restaurant["_id"]},
-            {"$set": update_dict}
+            {"_id": restaurant["_id"]}, {"$set": update_dict}
         )
-    
+
     updated_restaurant = await db.restaurants.find_one({"_id": restaurant["_id"]})
-    
+
     return RestaurantResponse(
         id=str(updated_restaurant["_id"]),
         owner_id=updated_restaurant["owner_id"],
@@ -118,13 +122,14 @@ async def update_my_restaurant(
         rating=updated_restaurant.get("rating", 0.0),
         total_ratings=updated_restaurant.get("total_ratings", 0),
         created_at=updated_restaurant["created_at"],
-        updated_at=updated_restaurant["updated_at"]
+        updated_at=updated_restaurant["updated_at"],
     )
 
 
-
 @router.get("/stats/dashboard-summary")
-async def restaurant_dashboard_summary(current_user = Depends(get_current_restaurant_owner)):
+async def restaurant_dashboard_summary(
+    current_user=Depends(get_current_restaurant_owner),
+):
     """Get comprehensive dashboard summary for restaurant owner"""
     try:
         owner_oid = ObjectId(current_user["_id"])
@@ -138,22 +143,27 @@ async def restaurant_dashboard_summary(current_user = Depends(get_current_restau
 
         # Get all orders for this restaurant
         orders = await db.orders.find({"restaurant_id": restaurant_id}).to_list(None)
-        
+
         # Calculate stats
         total_orders = len(orders)
-        pending_orders = len([o for o in orders if o["order_status"] not in ["delivered", "cancelled"]])
-        
+        pending_orders = len(
+            [o for o in orders if o["order_status"] not in ["delivered", "cancelled"]]
+        )
+
         # Get today's date range
-        from datetime import datetime, timezone, timedelta
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-        
+        from datetime import datetime, timedelta, timezone
+
+        today_start = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
         # completed_today = len([
-        #     o for o in orders 
+        #     o for o in orders
         #     if o["order_status"] == "delivered" and o.get("updated_at", o["created_at"]) >= today_start
         # ])
-        
+
         # revenue_today = sum([
-        #     o["total"] for o in orders 
+        #     o["total"] for o in orders
         #     if o["order_status"] == "delivered" and o.get("updated_at", o["created_at"]) >= today_start
         # ])
         completed_today = 0
@@ -161,7 +171,7 @@ async def restaurant_dashboard_summary(current_user = Depends(get_current_restau
 
         for o in orders:
             ts = o.get("updated_at", o["created_at"])
-            
+
             # Ensure timezone-aware
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)
@@ -170,23 +180,24 @@ async def restaurant_dashboard_summary(current_user = Depends(get_current_restau
                 completed_today += 1
                 revenue_today += o["total"]
 
-
         # Get ratings summary using aggregation
         ratings_pipeline = [
             {"$match": {"restaurant_id": restaurant_id}},
-            {"$group": {
-                "_id": None,
-                "count": {"$sum": 1},
-                "avg_restaurant": {"$avg": "$restaurant_rating"},
-                "avg_delivery": {"$avg": "$delivery_rating"},
-                "avg_food_quality": {"$avg": "$food_quality"},
-                "avg_delivery_speed": {"$avg": "$delivery_speed"},
-                "avg_packaging_quality": {"$avg": "$packaging_quality"},
-            }}
+            {
+                "$group": {
+                    "_id": None,
+                    "count": {"$sum": 1},
+                    "avg_restaurant": {"$avg": "$restaurant_rating"},
+                    "avg_delivery": {"$avg": "$delivery_rating"},
+                    "avg_food_quality": {"$avg": "$food_quality"},
+                    "avg_delivery_speed": {"$avg": "$delivery_speed"},
+                    "avg_packaging_quality": {"$avg": "$packaging_quality"},
+                }
+            },
         ]
 
         ratings_result = await db.ratings.aggregate(ratings_pipeline).to_list(1)
-        
+
         if ratings_result:
             r = ratings_result[0]
             ratings_summary = {
@@ -220,42 +231,51 @@ async def restaurant_dashboard_summary(current_user = Depends(get_current_restau
                 "total_orders": total_orders,
                 "pending_orders": pending_orders,
                 "completed_today": completed_today,
-                "revenue_today": revenue_today
+                "revenue_today": revenue_today,
             },
-            "ratings": ratings_summary
+            "ratings": ratings_summary,
         }
     except HTTPException:
         raise
     except Exception as e:
         print(f"[ERROR] dashboard_summary: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching dashboard data: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error fetching dashboard data: {str(e)}"
+        )
 
 
 @router.get("/stats/rating-summary")
-async def get_ratings_summary(current_user = Depends(get_current_restaurant_owner)):
+async def get_ratings_summary(current_user=Depends(get_current_restaurant_owner)):
     """Get detailed ratings summary for restaurant"""
     try:
         owner_id = ObjectId(current_user["_id"])
         restaurant = await db.restaurants.find_one({"owner_id": owner_id})
-        print("[DEBUG] Fetched restaurant for ratings summary:", restaurant," Owner ID:", owner_id)
+        print(
+            "[DEBUG] Fetched restaurant for ratings summary:",
+            restaurant,
+            " Owner ID:",
+            owner_id,
+        )
         if not restaurant:
             raise HTTPException(status_code=404, detail="Restaurant not found")
 
         pipeline = [
             {"$match": {"restaurant_id": str(restaurant["_id"])}},
-            {"$group": {
-                "_id": None,
-                "count": {"$sum": 1},
-                "avg_restaurant": {"$avg": "$restaurant_rating"},
-                "avg_delivery": {"$avg": "$delivery_rating"},
-                "avg_food_quality": {"$avg": "$food_quality"},
-                "avg_delivery_speed": {"$avg": "$delivery_speed"},
-                "avg_packaging_quality": {"$avg": "$packaging_quality"},
-            }}
+            {
+                "$group": {
+                    "_id": None,
+                    "count": {"$sum": 1},
+                    "avg_restaurant": {"$avg": "$restaurant_rating"},
+                    "avg_delivery": {"$avg": "$delivery_rating"},
+                    "avg_food_quality": {"$avg": "$food_quality"},
+                    "avg_delivery_speed": {"$avg": "$delivery_speed"},
+                    "avg_packaging_quality": {"$avg": "$packaging_quality"},
+                }
+            },
         ]
-        
+
         agg = await db.ratings.aggregate(pipeline).to_list(1)
-        
+
         if not agg:
             return {
                 "count": 0,
@@ -263,9 +283,9 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
                 "avg_delivery": 0,
                 "avg_food_quality": 0,
                 "avg_delivery_speed": 0,
-                "avg_packaging_quality": 0
+                "avg_packaging_quality": 0,
             }
-        
+
         x = agg[0]
         return {
             "count": x["count"],
@@ -281,48 +301,50 @@ async def get_ratings_summary(current_user = Depends(get_current_restaurant_owne
         print(f"[ERROR] rating_summary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching ratings: {str(e)}")
 
+
 @router.post("/menu-items", response_model=dict)
 async def add_menu_item(
-    item_data: MenuItem,
-    current_user = Depends(get_current_restaurant_owner)
+    item_data: MenuItem, current_user=Depends(get_current_restaurant_owner)
 ):
     """Add menu item to restaurant"""
     # Restaurant lookup — store restaurant_id as ObjectId
-    restaurant = await db.restaurants.find_one({"owner_id": ObjectId(current_user["_id"])})
-    
+    restaurant = await db.restaurants.find_one(
+        {"owner_id": ObjectId(current_user["_id"])}
+    )
+
     if not restaurant:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Restaurant not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found"
         )
 
     menu_item_doc = {
-        "restaurant_id": ObjectId(restaurant["_id"]),  
+        "restaurant_id": ObjectId(restaurant["_id"]),
         "name": item_data.name,
         "description": item_data.description,
         "price": item_data.price,
         "category": item_data.category,
         "image_url": item_data.image_url,
-        "availability": item_data.availability.value if hasattr(item_data.availability, "value") else item_data.availability,
+        "availability": (
+            item_data.availability.value
+            if hasattr(item_data.availability, "value")
+            else item_data.availability
+        ),
         "is_vegetarian": item_data.is_vegetarian,
         "is_vegan": item_data.is_vegan,
         "preparation_time": item_data.preparation_time,
         "daily_count": getattr(item_data, "daily_count", 0),
         "created_at": datetime.now(timezone.utc),
-        "updated_at": datetime.now(timezone.utc)
+        "updated_at": datetime.now(timezone.utc),
     }
 
     result = await db.menu_items.insert_one(menu_item_doc)
 
-    return {
-        "id": str(result.inserted_id),
-        "message": "Menu item added successfully"
-    }
+    return {"id": str(result.inserted_id), "message": "Menu item added successfully"}
+
 
 @router.get("/menu-items")
 async def get_menu_items(
-    restaurant_id: str = None,
-    current_user = Depends(get_current_restaurant_owner)
+    restaurant_id: str = None, current_user=Depends(get_current_restaurant_owner)
 ):
     """Get menu items for restaurant"""
     print("[DEBUG] get_menu_items called with current_user:", current_user)
@@ -331,14 +353,15 @@ async def get_menu_items(
         restaurant = await db.restaurants.find_one({"owner_id": owner_id})
         if not restaurant:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Restaurant not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found"
             )
-        restaurant_id =ObjectId( str(restaurant["_id"]))
-    
+        restaurant_id = ObjectId(str(restaurant["_id"]))
+
     try:
         # items = await db.menu_items.find({"restaurant_id": restaurant_id}).to_list(None)
-        items = await db.menu_items.find({"restaurant_id": ObjectId(restaurant_id)}).to_list(None)
+        items = await db.menu_items.find(
+            {"restaurant_id": ObjectId(restaurant_id)}
+        ).to_list(None)
 
     except:
         items = []
@@ -356,13 +379,21 @@ async def get_menu_items(
             "is_vegetarian": item.get("is_vegetarian", False),
             "is_vegan": item.get("is_vegan", False),
             "preparation_time": item.get("preparation_time", 30),
-            "daily_count": int(item.get("daily_count", 0)) if isinstance(item.get("daily_count", 0), (int, str)) and str(item.get("daily_count", 0)).isdigit() else item.get("daily_count", 0)
+            "daily_count": (
+                int(item.get("daily_count", 0))
+                if isinstance(item.get("daily_count", 0), (int, str))
+                and str(item.get("daily_count", 0)).isdigit()
+                else item.get("daily_count", 0)
+            ),
         }
         for item in items
     ]
 
+
 @router.get("/menu-items/{menu_item_id}")
-async def get_menu_item(menu_item_id: str, current_user = Depends(get_current_restaurant_owner)):
+async def get_menu_item(
+    menu_item_id: str, current_user=Depends(get_current_restaurant_owner)
+):
     """Fetch a single menu item by ID"""
     try:
         menu_item = await db.menu_items.find_one({"_id": ObjectId(menu_item_id)})
@@ -371,9 +402,13 @@ async def get_menu_item(menu_item_id: str, current_user = Depends(get_current_re
             raise HTTPException(status_code=404, detail="Menu item not found")
 
         # Ownership verification
-        restaurant = await db.restaurants.find_one({"_id": ObjectId(menu_item["restaurant_id"])})
+        restaurant = await db.restaurants.find_one(
+            {"_id": ObjectId(menu_item["restaurant_id"])}
+        )
         if restaurant["owner_id"] != ObjectId(current_user["_id"]):
-            raise HTTPException(status_code=403, detail="Not authorized to view this menu item")
+            raise HTTPException(
+                status_code=403, detail="Not authorized to view this menu item"
+            )
 
         return {
             "id": str(menu_item["_id"]),
@@ -386,7 +421,12 @@ async def get_menu_item(menu_item_id: str, current_user = Depends(get_current_re
             "is_vegetarian": menu_item.get("is_vegetarian", False),
             "is_vegan": menu_item.get("is_vegan", False),
             "preparation_time": menu_item.get("preparation_time", 0),
-            "daily_count": int(menu_item.get("daily_count", 0)) if isinstance(menu_item.get("daily_count", 0), (int, str)) and str(menu_item.get("daily_count", 0)).isdigit() else menu_item.get("daily_count", 0)
+            "daily_count": (
+                int(menu_item.get("daily_count", 0))
+                if isinstance(menu_item.get("daily_count", 0), (int, str))
+                and str(menu_item.get("daily_count", 0)).isdigit()
+                else menu_item.get("daily_count", 0)
+            ),
         }
 
     except HTTPException:
@@ -400,7 +440,7 @@ async def get_menu_item(menu_item_id: str, current_user = Depends(get_current_re
 async def update_menu_item(
     menu_item_id: str,
     update_data: MenuItemUpdate,
-    current_user = Depends(get_current_restaurant_owner)
+    current_user=Depends(get_current_restaurant_owner),
 ):
     """Update menu item"""
     try:
@@ -409,20 +449,24 @@ async def update_menu_item(
             raise HTTPException(status_code=404, detail="Menu item not found")
 
         # Verify ownership
-        restaurant = await db.restaurants.find_one({"_id": ObjectId(menu_item["restaurant_id"])})
+        restaurant = await db.restaurants.find_one(
+            {"_id": ObjectId(menu_item["restaurant_id"])}
+        )
         if not restaurant:
             raise HTTPException(status_code=404, detail="Restaurant not found")
 
         if str(restaurant["owner_id"]) != str(current_user["_id"]):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to update this menu item"
+                detail="Not authorized to update this menu item",
             )
 
         update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
         if update_dict:
             update_dict["updated_at"] = datetime.now(timezone.utc)
-            await db.menu_items.update_one({"_id": ObjectId(menu_item_id)}, {"$set": update_dict})
+            await db.menu_items.update_one(
+                {"_id": ObjectId(menu_item_id)}, {"$set": update_dict}
+            )
 
         return {"message": "Menu item updated successfully"}
 
@@ -447,13 +491,13 @@ async def update_menu_item(
 #             status_code=status.HTTP_404_NOT_FOUND,
 #             detail="Menu item not found"
 #         )
-    
+
 #     if not menu_item:
 #         raise HTTPException(
 #             status_code=status.HTTP_404_NOT_FOUND,
 #             detail="Menu item not found"
 #         )
-    
+
 #     # Verify ownership
 #     restaurant = await db.restaurants.find_one({"_id": ObjectId(menu_item["restaurant_id"])})
 #     if restaurant["owner_id"] != str(current_user["_id"]):
@@ -461,7 +505,7 @@ async def update_menu_item(
 #             status_code=status.HTTP_403_FORBIDDEN,
 #             detail="Not authorized to update this menu item"
 #         )
-    
+
 #     update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
 #     if update_dict:
 #         update_dict["updated_at"] = datetime.now(timezone.utc)
@@ -469,8 +513,9 @@ async def update_menu_item(
 #             {"_id": ObjectId(menu_item_id)},
 #             {"$set": update_dict}
 #         )
-    
+
 #     return {"message": "Menu item updated successfully"}
+
 
 @router.get("/{restaurant_id}/menu", response_model=list[MenuItemResponse])
 async def get_restaurant_menu(restaurant_id: str):
@@ -480,7 +525,9 @@ async def get_restaurant_menu(restaurant_id: str):
         if not restaurant:
             raise HTTPException(status_code=404, detail="Restaurant not found")
 
-        menu_items = await db.menu_items.find({"restaurant_id": ObjectId(restaurant_id)}).to_list(None)
+        menu_items = await db.menu_items.find(
+            {"restaurant_id": ObjectId(restaurant_id)}
+        ).to_list(None)
 
         return [
             MenuItemResponse(
@@ -497,7 +544,7 @@ async def get_restaurant_menu(restaurant_id: str):
                 preparation_time=item.get("preparation_time", 0),
                 created_at=item["created_at"],
                 updated_at=item["updated_at"],
-                daily_count=item.get("daily_count",0)
+                daily_count=item.get("daily_count", 0),
             )
             for item in menu_items
         ]
@@ -505,38 +552,34 @@ async def get_restaurant_menu(restaurant_id: str):
         print(f"[ERROR] get_restaurant_menu: {e}")
         raise HTTPException(status_code=500, detail="Error fetching menu items")
 
+
 @router.delete("/menu-items/{menu_item_id}")
 async def delete_menu_item(
-    menu_item_id: str,
-    current_user = Depends(get_current_restaurant_owner)
+    menu_item_id: str, current_user=Depends(get_current_restaurant_owner)
 ):
     """Delete menu item"""
     try:
         menu_item = await db.menu_items.find_one({"_id": ObjectId(menu_item_id)})
     except:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Menu item not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Menu item not found"
         )
-    
+
     if not menu_item:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Menu item not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Menu item not found"
         )
-    
+
     # Verify ownership
-    restaurant = await db.restaurants.find_one({"_id": ObjectId(menu_item["restaurant_id"])})
+    restaurant = await db.restaurants.find_one(
+        {"_id": ObjectId(menu_item["restaurant_id"])}
+    )
     if restaurant["owner_id"] != ObjectId(current_user["_id"]):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to delete this menu item"
+            detail="Not authorized to delete this menu item",
         )
-    
+
     await db.menu_items.delete_one({"_id": ObjectId(menu_item_id)})
-    
+
     return {"message": "Menu item deleted successfully"}
-
-
-
-

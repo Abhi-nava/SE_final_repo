@@ -1,8 +1,8 @@
+import logging
 import smtplib
 import ssl
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import logging
+from email.mime.text import MIMEText
 from typing import Optional
 
 from config import settings
@@ -11,15 +11,27 @@ logger = logging.getLogger(__name__)
 
 
 def _smtp_configured() -> bool:
-    return bool(settings.SMTP_USER and settings.SMTP_PASSWORD and settings.SMTP_SERVER and settings.SMTP_PORT)
+    return bool(
+        settings.SMTP_USER
+        and settings.SMTP_PASSWORD
+        and settings.SMTP_SERVER
+        and settings.SMTP_PORT
+    )
 
 
-def send_email(to_email: str, subject: str, body_text: str, from_name: Optional[str] = None) -> bool:
+def send_email(
+    to_email: str, subject: str, body_text: str, from_name: Optional[str] = None
+) -> bool:
     """Send a plain-text email using SMTP settings. Returns True on success, False otherwise.
     Falls back to console log if SMTP isn't configured.
     """
     if not _smtp_configured():
-        logger.warning("SMTP not configured. Would have sent email to %s with subject '%s'. Body: %s", to_email, subject, body_text)
+        logger.warning(
+            "SMTP not configured. Would have sent email to %s with subject '%s'. Body: %s",
+            to_email,
+            subject,
+            body_text,
+        )
         return False
 
     from_email = settings.SMTP_USER

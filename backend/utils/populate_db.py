@@ -7,10 +7,11 @@ Usage: python scripts/populate_db.py
 """
 
 import asyncio
-from datetime import datetime, timedelta
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
+from datetime import datetime, timedelta
+
 from bson import ObjectId
+from motor.motor_asyncio import AsyncIOMotorClient
 from security import hash_password
 
 hashed = hash_password("your_password")
@@ -518,75 +519,75 @@ SAMPLE_RATINGS = [
 async def create_indexes(db):
     """Create all necessary indexes for optimal query performance"""
     print("Creating indexes...")
-    
+
     # Users collection indexes
     await db["users"].create_index("email", unique=True)
     await db["users"].create_index("phone")
     await db["users"].create_index("role")
-    
+
     # Restaurants collection indexes
     await db["restaurants"].create_index("owner_id")
     await db["restaurants"].create_index("city")
     await db["restaurants"].create_index("cuisine_types")
-    
+
     # Menu items collection indexes
     await db["menu_items"].create_index("restaurant_id")
     await db["menu_items"].create_index("category")
     await db["menu_items"].create_index([("restaurant_id", 1), ("category", 1)])
-    
+
     # Orders collection indexes
     await db["orders"].create_index("customer_id")
     await db["orders"].create_index("restaurant_id")
     await db["orders"].create_index("delivery_agent_id")
     await db["orders"].create_index("status")
     await db["orders"].create_index("created_at")
-    
+
     # Delivery agents collection indexes
     await db["delivery_agents"].create_index("user_id")
     await db["delivery_agents"].create_index("status")
-    
+
     # Ratings collection indexes
     await db["ratings"].create_index("order_id")
     await db["ratings"].create_index("customer_id")
     await db["ratings"].create_index("restaurant_id")
     await db["ratings"].create_index("delivery_agent_id")
-    
+
     print("Indexes created successfully!")
 
 
 async def populate_database():
     """Main function to populate the database"""
     client = AsyncIOMotorClient(MONGODB_URL)
-    
+
     try:
         # Connect to database
         db = client[DATABASE_NAME]
-        
+
         # Test connection
         await client.admin.command("ping")
         print(f"Connected to MongoDB at {MONGODB_URL}")
         print(f"Using database: {DATABASE_NAME}")
-        
+
         # Drop existing collections for fresh start
         print("\nDropping existing collections...")
         collections = await db.list_collection_names()
         for collection in collections:
             await db[collection].drop()
             print(f"  Dropped {collection}")
-        
+
         # Create indexes
         await create_indexes(db)
-        
+
         # Insert users
         print("\nInserting sample users...")
         users_result = await db["users"].insert_many(SAMPLE_CUSTOMERS)
         print(f"  Inserted {len(users_result.inserted_ids)} customers")
-        
+
         # Insert restaurants
         print("\nInserting sample restaurants...")
         restaurants_result = await db["restaurants"].insert_many(SAMPLE_RESTAURANTS)
         print(f"  Inserted {len(restaurants_result.inserted_ids)} restaurants")
-        
+
         # Insert menu items
         print("\nInserting menu items...")
         menu_items = []
@@ -594,24 +595,24 @@ async def populate_database():
             menu_items.extend(items)
         menu_items_result = await db["menu_items"].insert_many(menu_items)
         print(f"  Inserted {len(menu_items_result.inserted_ids)} menu items")
-        
+
         # Insert delivery agents
         print("\nInserting delivery agents...")
         delivery_agents_result = await db["delivery_agents"].insert_many(
             SAMPLE_DELIVERY_AGENTS
         )
         print(f"  Inserted {len(delivery_agents_result.inserted_ids)} delivery agents")
-        
+
         # Insert orders
         print("\nInserting sample orders...")
         orders_result = await db["orders"].insert_many(SAMPLE_ORDERS)
         print(f"  Inserted {len(orders_result.inserted_ids)} orders")
-        
+
         # Insert ratings
         print("\nInserting ratings...")
         ratings_result = await db["ratings"].insert_many(SAMPLE_RATINGS)
         print(f"  Inserted {len(ratings_result.inserted_ids)} ratings")
-        
+
         # Print summary
         print("\n" + "=" * 50)
         print("DATABASE POPULATION COMPLETE!")
@@ -624,7 +625,7 @@ async def populate_database():
         print(f"Orders: {len(SAMPLE_ORDERS)}")
         print(f"Ratings: {len(SAMPLE_RATINGS)}")
         print("=" * 50)
-        
+
     except Exception as e:
         print(f"Error populating database: {str(e)}")
         raise

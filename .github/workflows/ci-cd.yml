@@ -257,7 +257,7 @@ jobs:
 
       - name: Run flake8
         continue-on-error: true
-        run: flake8 backend/
+        run: flake8 backend/ --max-line-length=120 --extend-ignore=E501,W503,E402
 
       - name: Run pylint
         continue-on-error: true
@@ -269,7 +269,7 @@ jobs:
 
       - name: Check isort
         continue-on-error: true
-        run: isort --check-only backend/
+        run: isort --check-only --profile black backend/
 
 
   # 🛡️ 5️⃣ Security

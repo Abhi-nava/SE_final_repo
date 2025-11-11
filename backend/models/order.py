@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
-from enum import Enum
 from decimal import Decimal
+from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class OrderStatus(str, Enum):
     PENDING = "pending"
@@ -16,14 +18,18 @@ class OrderStatus(str, Enum):
     CANCELLED = "cancelled"
     REFUNDED = "refunded"
 
+
 class OrderItemRequest(BaseModel):
     """Order item request schema"""
+
     menu_item_id: str
     quantity: int = Field(..., gt=0)
     special_instructions: Optional[str] = None
 
+
 class OrderCreate(BaseModel):
     """Order creation schema"""
+
     restaurant_id: str
     items: List[OrderItemRequest]
     delivery_address: str
@@ -32,20 +38,24 @@ class OrderCreate(BaseModel):
     coupon_code: Optional[str] = None
     special_instructions: Optional[str] = None
 
+
 class OrderUpdate(BaseModel):
     """Order update schema"""
+
     status: Optional[OrderStatus] = None
     delivery_agent_id: Optional[str] = None
+
 
 class RestaurantMeta(BaseModel):
     name: str
     image: str | None = None
 
+
 class OrderResponse(BaseModel):
     id: str
     customer_id: str
     restaurant_id: str
-    restaurant: RestaurantMeta | None = None  
+    restaurant: RestaurantMeta | None = None
     items: list
     subtotal: float
     delivery_fee: float
@@ -59,11 +69,13 @@ class OrderResponse(BaseModel):
     estimated_delivery_time: int | None = None
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         populate_by_name = True
 
+
 class OrderStatusUpdate(BaseModel):
     """Order status update schema"""
+
     status: OrderStatus
     notes: Optional[str] = None
