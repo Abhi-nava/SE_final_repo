@@ -11,12 +11,12 @@ async def test_cancel_order_endpoint_success(client, mock_db):
         "status": "paid"
     })
 
-    response = await client.post(f"/orders/{order_id}/cancel")
+    response = await client.post(f"/api/orders/{order_id}/cancel")
     assert response.status_code in [200, 400, 403, 404]
 
 @pytest.mark.asyncio
 async def test_cancel_order_endpoint_not_found(client):
-    response = await client.post(f"/orders/{ObjectId()}/cancel")
+    response = await client.post(f"/api/orders/{ObjectId()}/cancel")
     assert response.status_code in [200, 400, 404]
 
 @pytest.mark.asyncio
@@ -28,7 +28,7 @@ async def test_cancel_order_endpoint_unauthorized(client, mock_db):
         "status": "paid"
     })
 
-    response = await client.post(f"/orders/{order_id}/cancel")
+    response = await client.post(f"/api/orders/{order_id}/cancel")
 
     assert response.status_code in [200, 400, 403]
 
@@ -41,7 +41,7 @@ async def test_cancel_order_endpoint_already_cancelled(client, mock_db):
         "status": "cancelled"
     })
 
-    response = await client.post(f"/orders/{order_id}/cancel")
+    response = await client.post(f"/api/orders/{order_id}/cancel")
 
     assert response.status_code in [200, 400]
 
@@ -54,7 +54,7 @@ async def test_cancel_order_endpoint_delivered(client, mock_db):
         "status": "delivered"
     })
 
-    response = await client.post(f"/orders/{order_id}/cancel")
+    response = await client.post(f"/api/orders/{order_id}/cancel")
 
     assert response.status_code in [200, 400]
 
@@ -70,6 +70,6 @@ async def test_cancel_order_endpoint_all_cancellable_statuses(client, mock_db):
             "status": status
         })
 
-        response = await client.post(f"/orders/{order_id}/cancel")
+        response = await client.post(f"/api/orders/{order_id}/cancel")
 
         assert response.status_code in [200, 400]
