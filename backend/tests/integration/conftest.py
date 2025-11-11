@@ -176,8 +176,18 @@ def mock_database():
     # Create the mock database
     mock_db = InMemoryDatabase()
     
-    # Patch database in all relevant modules
-    with patch('database.db', mock_db):
-        with patch('routes.orders.db', mock_db):
-            with patch('main.db', mock_db):
-                yield mock_db
+    # Start patches and keep them active
+    patch1 = patch('database.db', mock_db)
+    patch2 = patch('routes.orders.db', mock_db)
+    patch3 = patch('main.db', mock_db)
+    
+    patch1.start()
+    patch2.start()
+    patch3.start()
+    
+    try:
+        yield mock_db
+    finally:
+        patch1.stop()
+        patch2.stop()
+        patch3.stop()

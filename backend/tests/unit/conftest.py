@@ -32,8 +32,15 @@ def mock_db():
     mock_database.delivery_agents = mock_delivery_agents
     mock_database.ratings = mock_ratings
     
-    # Patch database in all relevant modules
-    with patch('routes.orders.db', mock_database):
-        with patch('database.db', mock_database):
-            yield mock_database
-
+    # Start patches and keep them active
+    patch1 = patch('routes.orders.db', mock_database)
+    patch2 = patch('database.db', mock_database)
+    
+    patch1.start()
+    patch2.start()
+    
+    try:
+        yield mock_database
+    finally:
+        patch1.stop()
+        patch2.stop()
