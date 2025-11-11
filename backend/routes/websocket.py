@@ -3,8 +3,7 @@ import logging
 from datetime import datetime, timezone
 
 from database import db
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
-from utils.dependencies import get_current_user_ws
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

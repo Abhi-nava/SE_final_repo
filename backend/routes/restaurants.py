@@ -151,7 +151,7 @@ async def restaurant_dashboard_summary(
         )
 
         # Get today's date range
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timezone
 
         today_start = datetime.now(timezone.utc).replace(
             hour=0, minute=0, second=0, microsecond=0
@@ -363,7 +363,7 @@ async def get_menu_items(
             {"restaurant_id": ObjectId(restaurant_id)}
         ).to_list(None)
 
-    except:
+    except Exception:
         items = []
     print(f"[DEBUG] Fetched {len(items)} menu items for restaurant ID {restaurant_id}")
     print("[DEBUG] Menu items:", items)
@@ -560,7 +560,7 @@ async def delete_menu_item(
     """Delete menu item"""
     try:
         menu_item = await db.menu_items.find_one({"_id": ObjectId(menu_item_id)})
-    except:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Menu item not found"
         )

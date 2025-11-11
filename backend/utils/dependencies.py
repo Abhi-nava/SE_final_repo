@@ -98,7 +98,7 @@ async def get_current_user_http(
     Dependency to get current authenticated user for HTTP requests.
     Returns user dict with _id as string (NOT ObjectId).
     """
-    print(f"\n[DEPENDENCY DEBUG] ===== get_current_user_http called =====")
+    print("\\n[DEPENDENCY DEBUG] ===== get_current_user_http called =====")
     print(f"[DEPENDENCY DEBUG] Credentials: {credentials}")
 
     try:
@@ -114,7 +114,7 @@ async def get_current_user_http(
         print(f"[DEPENDENCY DEBUG] Email from token: {email}")
 
         if email is None:
-            print(f"[DEPENDENCY DEBUG] ERROR: No email in token")
+            print("[DEPENDENCY DEBUG] ERROR: No email in token")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token: missing email",
@@ -125,7 +125,7 @@ async def get_current_user_http(
         print(f"[DEPENDENCY DEBUG] User found: {user is not None}")
 
         if user is None:
-            print(f"[DEPENDENCY DEBUG] ERROR: User not found in database")
+            print("[DEPENDENCY DEBUG] ERROR: User not found in database")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
             )
@@ -136,7 +136,7 @@ async def get_current_user_http(
 
         print(f"[DEPENDENCY DEBUG] User _id: {user['_id']} (type: {type(user['_id'])})")
         print(f"[DEPENDENCY DEBUG] User role: {user.get('role')}")
-        print(f"[DEPENDENCY DEBUG] Returning user successfully\n")
+        print("[DEPENDENCY DEBUG] Returning user successfully\\n")
 
         return user
 
@@ -165,7 +165,7 @@ async def get_current_user_http_d(
     Dependency to get current authenticated user for HTTP requests.
     Returns user dict with _id as string (NOT ObjectId).
     """
-    print(f"\n[DEPENDENCY DEBUG] ===== get_current_user_http called =====")
+    print("\\n[DEPENDENCY DEBUG] ===== get_current_user_http called =====")
     print(f"[DEPENDENCY DEBUG] Credentials: {credentials}")
 
     try:
@@ -181,7 +181,7 @@ async def get_current_user_http_d(
         print(f"[DEPENDENCY DEBUG] Email from token: {email}")
 
         if email is None:
-            print(f"[DEPENDENCY DEBUG] ERROR: No email in token")
+            print("[DEPENDENCY DEBUG] ERROR: No email in token")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token: missing email",
@@ -192,7 +192,7 @@ async def get_current_user_http_d(
         print(f"[DEPENDENCY DEBUG] User found: {user is not None}")
 
         if user is None:
-            print(f"[DEPENDENCY DEBUG] ERROR: User not found in database")
+            print("[DEPENDENCY DEBUG] ERROR: User not found in database")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
             )
@@ -203,7 +203,7 @@ async def get_current_user_http_d(
 
         print(f"[DEPENDENCY DEBUG] User _id: {user['_id']} (type: {type(user['_id'])})")
         print(f"[DEPENDENCY DEBUG] User role: {user.get('role')}")
-        print(f"[DEPENDENCY DEBUG] Returning user successfully\n")
+        print("[DEPENDENCY DEBUG] Returning user successfully\\n")
 
         return user
 
