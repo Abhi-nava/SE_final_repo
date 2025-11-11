@@ -9,7 +9,7 @@ on:
 
 jobs:
   # 🧱 1️⃣ Build
-  build:  
+  build:
     name: Build
     runs-on: ubuntu-latest
     steps:
@@ -89,7 +89,7 @@ jobs:
       - name: Generate build summary
         run: |
           echo "### Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo ""
           echo "✅ Frontend build completed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Backend dependencies installed" >> $GITHUB_STEP_SUMMARY
 
@@ -98,6 +98,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    needs: build  # <-- FIXED
     env:
       PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/backend
     steps:
@@ -129,7 +130,6 @@ jobs:
         run: |
           echo "Checking for test files..."
           if [ ! -d "backend/tests" ]; then
-            echo "Test directory not found"
             echo "HAS_TESTS=false" >> $GITHUB_OUTPUT
             echo "UNIT_COUNT=0" >> $GITHUB_OUTPUT
             echo "INTEGRATION_COUNT=0" >> $GITHUB_OUTPUT
@@ -139,9 +139,6 @@ jobs:
             INTEGRATION_TESTS=$(find backend/tests/integration -name "test_*.py" 2>/dev/null | wc -l || echo "0")
             SYSTEM_TESTS=$(find backend/tests/system -name "test_*.py" 2>/dev/null | wc -l || echo "0")
             
-            echo "Found $UNIT_TESTS unit test files"
-            echo "Found $INTEGRATION_TESTS integration test files"
-            echo "Found $SYSTEM_TESTS system test files"
             echo "UNIT_COUNT=$UNIT_TESTS" >> $GITHUB_OUTPUT
             echo "INTEGRATION_COUNT=$INTEGRATION_TESTS" >> $GITHUB_OUTPUT
             echo "SYSTEM_COUNT=$SYSTEM_TESTS" >> $GITHUB_OUTPUT
@@ -157,56 +154,41 @@ jobs:
         if: steps.check-tests.outputs.HAS_TESTS == 'true'
         working-directory: ./backend
         run: |
-          if [ -d "tests/unit" ] && [ -n "$(find tests/unit -name 'test_*.py' 2>/dev/null)" ]; then
-            echo "Running unit tests..."
+          if [ -d "tests/unit" ] && [ -n "$(find tests/unit -name 'test_*.py')" ]; then
             pytest tests/unit/ -v --tb=short --asyncio-mode=auto
-          else
-            echo "No unit tests found, skipping"
           fi
 
       - name: Run integration tests
         if: steps.check-tests.outputs.HAS_TESTS == 'true'
         working-directory: ./backend
         run: |
-          if [ -d "tests/integration" ] && [ -n "$(find tests/integration -name 'test_*.py' 2>/dev/null)" ]; then
-            echo "Running integration tests with mock database..."
+          if [ -d "tests/integration" ] && [ -n "$(find tests/integration -name 'test_*.py')" ]; then
             pytest tests/integration/ -v --tb=short --asyncio-mode=auto
-          else
-            echo "No integration tests found, skipping"
           fi
 
       - name: Run system tests
         if: steps.check-tests.outputs.HAS_TESTS == 'true'
         working-directory: ./backend
         run: |
-          if [ -d "tests/system" ] && [ -n "$(find tests/system -name 'test_*.py' 2>/dev/null)" ]; then
-            echo "Running system tests..."
+          if [ -d "tests/system" ] && [ -n "$(find tests/system -name 'test_*.py')" ]; then
             pytest tests/system/ -v --tb=short --asyncio-mode=auto
-          else
-            echo "No system tests found, skipping"
           fi
 
       - name: Generate test summary
         if: always()
         run: |
           echo "### Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.check-tests.outputs.HAS_TESTS }}" == "true" ]; then
-            echo "#### Backend Tests" >> $GITHUB_STEP_SUMMARY
-            echo "✅ All backend tests executed" >> $GITHUB_STEP_SUMMARY
-            echo "- Unit Test Files: ${{ steps.check-tests.outputs.UNIT_COUNT }}" >> $GITHUB_STEP_SUMMARY
-            echo "- Integration Test Files: ${{ steps.check-tests.outputs.INTEGRATION_COUNT }}" >> $GITHUB_STEP_SUMMARY
-            echo "- System Test Files: ${{ steps.check-tests.outputs.SYSTEM_COUNT }}" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ No test files found in backend/tests/" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo ""
+          echo "Unit: ${{ steps.check-tests.outputs.UNIT_COUNT }}" >> $GITHUB_STEP_SUMMARY
+          echo "Integration: ${{ steps.check-tests.outputs.INTEGRATION_COUNT }}" >> $GITHUB_STEP_SUMMARY
+          echo "System: ${{ steps.check-tests.outputs.SYSTEM_COUNT }}" >> $GITHUB_STEP_SUMMARY
 
 
   # 📊 3️⃣ Coverage
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    needs: test
+    needs: test  # <-- FIXED
     env:
       PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/backend
     steps:
@@ -227,11 +209,9 @@ jobs:
       - name: Check for test files
         id: check-tests
         run: |
-          if [ ! -d "backend/tests" ] || [ -z "$(find backend/tests -name 'test_*.py' -o -name '*_test.py')" ]; then
-            echo "No test files found, skipping coverage report"
+          if [ -z "$(find backend/tests -name 'test_*.py' -o -name '*_test.py')" ]; then
             echo "HAS_TESTS=false" >> $GITHUB_OUTPUT
           else
-            echo "Test files found, running coverage"
             echo "HAS_TESTS=true" >> $GITHUB_OUTPUT
           fi
 
@@ -249,54 +229,23 @@ jobs:
             --asyncio-mode=auto \
             --import-mode=append
 
-      - name: Upload coverage report
-        if: always() && steps.check-tests.outputs.HAS_TESTS == 'true'
+      - name: Upload coverage artifacts
+        if: steps.check-tests.outputs.HAS_TESTS == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: |
-            reports/coverage/
-            reports/junit/
-          retention-days: 7
-          if-no-files-found: warn
-
-      - name: Skip coverage report
-        if: steps.check-tests.outputs.HAS_TESTS != 'true'
-        run: |
-          echo "##[warning]No test files found, skipping coverage report"
-          mkdir -p reports/coverage
-          touch reports/coverage/coverage.xml
-          touch reports/coverage/index.html
-
-      - name: Generate coverage summary
-        run: |
-          echo "### Coverage Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.check-tests.outputs.HAS_TESTS }}" == "true" ]; then
-            echo "✅ Backend coverage report generated" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Coverage includes:**" >> $GITHUB_STEP_SUMMARY
-            echo "- Authentication & Security (routes/auth.py, utils/security.py)" >> $GITHUB_STEP_SUMMARY
-            echo "- User Management (models/user.py)" >> $GITHUB_STEP_SUMMARY
-            echo "- Ratings System (routes/ratings.py, models/rating.py)" >> $GITHUB_STEP_SUMMARY
-            echo "- All Backend Routes & Models" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ No test files found, coverage skipped" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "_Note: No test coverage configured for frontend_" >> $GITHUB_STEP_SUMMARY
+          path: reports/coverage/
 
 
   # 🧹 4️⃣ Lint
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    needs: coverage
+    needs: coverage  # <-- FIXED
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Backend Linting
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -304,47 +253,30 @@ jobs:
 
       - name: Install linting tools
         run: |
-          python -m pip install --upgrade pip
           pip install flake8 pylint black isort mypy
 
       - name: Run flake8
         continue-on-error: true
-        run: |
-          flake8 backend/ \
-            --max-line-length=120 \
-            --extend-ignore=E501,W503 \
-            --exclude=__pycache__,*.pyc,.env || true
+        run: flake8 backend/
 
       - name: Run pylint
         continue-on-error: true
-        run: |
-          pylint backend/ \
-            --disable=C0111,R0903,C0103 \
-            --ignore=__pycache__ || true
+        run: pylint backend/ --disable=C0111,R0903,C0103
 
-      - name: Check code formatting with black
+      - name: Check black
         continue-on-error: true
-        run: |
-          black --check backend/ || true
+        run: black --check backend/
 
-      - name: Check import sorting with isort
+      - name: Check isort
         continue-on-error: true
-        run: |
-          isort --check-only backend/ || true
-
-      - name: Generate lint summary
-        if: always()
-        run: |
-          echo "### Lint Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Backend linting completed" >> $GITHUB_STEP_SUMMARY
+        run: isort --check-only backend/
 
 
   # 🛡️ 5️⃣ Security
   security:
     name: Security
     runs-on: ubuntu-latest
-    needs: lint
+    needs: lint  # <-- FIXED
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -371,65 +303,52 @@ jobs:
 
       - name: Install security tools
         run: |
-          python -m pip install --upgrade pip
           pip install safety bandit
 
-      - name: Run safety check (vulnerabilities only)
+      - name: Run safety
         continue-on-error: true
         working-directory: ./backend
         run: |
           pip install -r requirements.txt
-          # Only check for security vulnerabilities, ignore outdated packages
-          safety check --json --ignore-unpinned > ../safety-report.json || true
+          safety check --json > ../safety-report.json || true
 
-      - name: Run bandit security linter
+      - name: Run bandit
         continue-on-error: true
         run: |
-          bandit -r backend/ \
-            -f json -o bandit-report.json \
-            --exclude backend/__pycache__ || true
+          bandit -r backend/ -f json -o bandit-report.json || true
 
-      - name: Upload security reports
+      - name: Upload security report
         uses: actions/upload-artifact@v4
         with:
           name: security-reports
           path: |
             safety-report.json
             bandit-report.json
-          if-no-files-found: ignore
-
-      - name: Generate security summary
-        if: always()
-        run: |
-          echo "### Security Audit Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Frontend security audit completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Backend security scan completed" >> $GITHUB_STEP_SUMMARY
 
 
-  # 📦 6️⃣ Deployment Artifact
+  # 📦 6️⃣ Deployment
   deployment-artifact:
     name: Deployment Artifact
     runs-on: ubuntu-latest
-    needs: [test, coverage, lint, security]
+    needs: [test, coverage, lint, security]  # <-- FIXED
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download frontend build artifacts
+      - name: Download frontend artifacts
         uses: actions/download-artifact@v4
         with:
           name: nextjs-build
           path: build-output
 
-      - name: Download coverage reports
+      - name: Download coverage artifacts
         uses: actions/download-artifact@v4
         with:
           name: coverage-report
           path: coverage-reports
         continue-on-error: true
 
-      - name: Download security reports
+      - name: Download security artifacts
         uses: actions/download-artifact@v4
         with:
           name: security-reports
@@ -439,60 +358,14 @@ jobs:
       - name: Create deployment package
         run: |
           mkdir -p deployment_package
-          
-          # Frontend build
+          cp -r backend deployment_package/
           cp -r build-output/.next deployment_package/ || true
           cp -r build-output/public deployment_package/ || true
-          
-          # Backend code
-          cp -r backend deployment_package/
-          
-          # Configuration files
-          cp package.json deployment_package/ || true
-          cp next.config.mjs deployment_package/ || true
-          
-          # Reports
-          mkdir -p deployment_package/reports
-          cp -r coverage-reports deployment_package/reports/ || true
-          cp -r security-reports deployment_package/reports/ || true
-          
-          # Documentation
           cp README.md deployment_package/ || true
-          
-          # Create archive
-          cd deployment_package && tar -czf ../deployment_bundle.tar.gz . && cd -
+          tar -czf deployment_bundle.tar.gz deployment_package/
 
       - name: Upload deployment bundle
         uses: actions/upload-artifact@v4
         with:
           name: deployment-bundle
           path: deployment_bundle.tar.gz
-          if-no-files-found: warn
-
-      - name: Generate deployment summary
-        run: |
-          echo "### 🚀 Food Delivery Platform - Deployment Ready" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All quality checks passed! Application is packaged for deployment." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Application Stack:**" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Next.js Frontend (React 18, TypeScript)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ FastAPI Backend (Python 3.10)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ MongoDB Database (Motor/PyMongo)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ JWT Authentication with 2FA" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Password Reset Flow" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Ratings System" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Test Coverage:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Unit Tests (Security, Models)" >> $GITHUB_STEP_SUMMARY
-          echo "- Integration Tests (Auth, Ratings)" >> $GITHUB_STEP_SUMMARY
-          echo "- System Tests (End-to-End Flows)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Quality Reports:**" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Code Coverage Analysis" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Security Audit (Safety, Bandit)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Code Linting (Flake8, Pylint, Black)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
