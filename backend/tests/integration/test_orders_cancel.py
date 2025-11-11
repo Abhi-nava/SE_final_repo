@@ -3,12 +3,16 @@ Integration tests for order cancellation functionality.
 Tests the full API endpoint with a mock database.
 """
 import pytest
-from httpx import AsyncClient
+from starlette.testclient import TestClient
 from bson import ObjectId
 from datetime import datetime
 from main import app
 from database import db
 from utils.dependencies import get_current_user_http
+
+
+# Create test client
+client = TestClient(app)
 
 
 @pytest.fixture
@@ -115,8 +119,7 @@ async def test_cancel_order_endpoint_success(create_test_order, mock_user_data):
         app.dependency_overrides[get_current_user_http] = override_get_current_user
         
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
-                response = await client.post(f"/api/orders/{order_id}/cancel")
+            response = client.post(f"/api/orders/{order_id}/cancel")
             
             assert response.status_code == 200
             assert response.json()["message"] == "Order cancelled successfully"
@@ -143,8 +146,7 @@ async def test_cancel_order_endpoint_not_found(mock_user_data):
     app.dependency_overrides[get_current_user_http] = override_get_current_user
     
     try:
-        async with AsyncClient(app=app, base_url="http://test") as client:
-            response = await client.post(f"/api/orders/{fake_order_id}/cancel")
+        response = client.post(f"/api/orders/{fake_order_id}/cancel")
         
         assert response.status_code == 404
         assert "Order not found" in response.json()["detail"]
@@ -164,8 +166,7 @@ async def test_cancel_order_endpoint_unauthorized(create_test_order, mock_other_
         app.dependency_overrides[get_current_user_http] = override_get_current_user
         
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
-                response = await client.post(f"/api/orders/{order_id}/cancel")
+            response = client.post(f"/api/orders/{order_id}/cancel")
             
             assert response.status_code == 403
             assert "Not authorized" in response.json()["detail"]
@@ -198,8 +199,7 @@ async def test_cancel_order_endpoint_already_cancelled(mock_user_data, mock_rest
     app.dependency_overrides[get_current_user_http] = override_get_current_user
     
     try:
-        async with AsyncClient(app=app, base_url="http://test") as client:
-            response = await client.post(f"/api/orders/{order_id}/cancel")
+        response = client.post(f"/api/orders/{order_id}/cancel")
         
         assert response.status_code == 400
         assert "cannot be cancelled" in response.json()["detail"]
@@ -232,8 +232,7 @@ async def test_cancel_order_endpoint_delivered(mock_user_data, mock_restaurant_d
     app.dependency_overrides[get_current_user_http] = override_get_current_user
     
     try:
-        async with AsyncClient(app=app, base_url="http://test") as client:
-            response = await client.post(f"/api/orders/{order_id}/cancel")
+        response = client.post(f"/api/orders/{order_id}/cancel")
         
         assert response.status_code == 400
         assert "cannot be cancelled" in response.json()["detail"]
@@ -268,8 +267,7 @@ async def test_cancel_order_endpoint_all_cancellable_statuses(mock_user_data, mo
         app.dependency_overrides[get_current_user_http] = override_get_current_user
         
         try:
-            async with AsyncClient(app=app, base_url="http://test") as client:
-                response = await client.post(f"/api/orders/{order_id}/cancel")
+            response = client.post(f"/api/orders/{order_id}/cancel")
             
             assert response.status_code == 200, f"Failed for status: {status}"
             assert response.json()["status"] == "cancelled"

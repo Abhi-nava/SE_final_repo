@@ -53,19 +53,30 @@ def mock_database():
         
         async def update_one(self, filter_dict: Dict, update_dict: Dict) -> MagicMock:
             """Update a single document"""
-            filter_dict = self._convert_filter(filter_dict)
+            # Convert ObjectId strings to ObjectId objects in filter
+            from bson import ObjectId
+            converted_filter = {}
+            for key, value in filter_dict.items():
+                if key == "_id":
+                    converted_filter[key] = ObjectId(value) if isinstance(value, str) else value
+                else:
+                    converted_filter[key] = value
             
-            for i, doc in enumerate(self._storage):
-                if self._matches(doc, filter_dict):
-                    # Handle $set operator
-                    if "$set" in update_dict:
-                        for key, value in update_dict["$set"].items():
-                            doc[key] = value
-                    else:
-                        # Direct update
-                        doc.update(update_dict)
+            # Handle $set operator
+            if "$set" in update_dict:
+                set_dict = update_dict["$set"]
+                # Update document
+                doc = self._find_doc(converted_filter)
+                if doc:
+                    doc.update(set_dict)
                     return MagicMock(modified_count=1)
-            return MagicMock(modified_count=0)
+                return MagicMock(modified_count=0)
+            else:
+                doc = self._find_doc(converted_filter)
+                if doc:
+                    doc.update(update_dict)
+                    return MagicMock(modified_count=1)
+                return MagicMock(modified_count=0)
         
         async def delete_one(self, filter_dict: Dict) -> MagicMock:
             """Delete a single document"""
@@ -96,6 +107,13 @@ def mock_database():
                 inserted_ids.append(doc_copy["_id"])
                 self._storage.append(doc_copy)
             return MagicMock(inserted_ids=inserted_ids)
+        
+        def _find_doc(self, filter_dict: Dict) -> Optional[Dict]:
+            """Find a document in storage"""
+            for doc in self._storage:
+                if self._matches(doc, filter_dict):
+                    return doc
+            return None
         
         def _convert_filter(self, filter_dict: Dict) -> Dict:
             """Convert filter dictionary, handling ObjectId strings"""
