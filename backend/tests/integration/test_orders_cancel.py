@@ -3,7 +3,7 @@ Integration tests for order cancellation functionality.
 Tests the full API endpoint with a mock database.
 """
 import pytest
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 from bson import ObjectId
 from datetime import datetime
 from main import app
