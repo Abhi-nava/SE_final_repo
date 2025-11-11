@@ -122,12 +122,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Setup MongoDB
-        uses: supercharge/mongodb-github-action@1.10.0
-        with:
-          mongodb-version: '6.0'
-          mongodb-replica-set: 'test-rs'
-
       - name: Verify test files exist
         id: check-tests
         run: |
@@ -167,12 +161,9 @@ jobs:
       - name: Run integration tests
         if: env.HAS_TESTS == 'true'
         working-directory: ./backend
-        env:
-          MONGODB_URL: mongodb://localhost:27017
-          DATABASE_NAME: test-db
         run: |
           if [ -d "tests/integration" ] && [ -n "$(find tests/integration -name 'test_*.py' 2>/dev/null)" ]; then
-            echo "Running integration tests..."
+            echo "Running integration tests with mock database..."
             pytest tests/integration/ -v --tb=short --asyncio-mode=auto
           else
             echo "No integration tests found, skipping"
@@ -215,12 +206,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Setup MongoDB
-        uses: supercharge/mongodb-github-action@1.10.0
-        with:
-          mongodb-version: '6.0'
-          mongodb-replica-set: 'test-rs'
-
       - name: Check for test files
         id: check-tests
         run: |
@@ -235,9 +220,6 @@ jobs:
       - name: Generate backend coverage report
         if: env.HAS_TESTS == 'true'
         working-directory: ./backend
-        env:
-          MONGODB_URL: mongodb://localhost:27017
-          DATABASE_NAME: test-db
         run: |
           mkdir -p ../reports/coverage ../reports/junit
           pytest tests/ \

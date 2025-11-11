@@ -1,6 +1,6 @@
 """
 Integration tests for order cancellation functionality.
-Tests the full API endpoint with database interactions.
+Tests the full API endpoint with a mock database (mongomock).
 """
 import pytest
 from fastapi.testclient import TestClient
@@ -17,7 +17,7 @@ client = TestClient(app)
 
 @pytest.fixture
 def mock_user_data():
-    """Create a mock user in the database"""
+    """Create a mock user data structure"""
     user_data = {
         "_id": ObjectId(),
         "email": "test_cancel@example.com",
@@ -43,7 +43,7 @@ def mock_other_user_data():
 
 @pytest.fixture
 def mock_restaurant_data():
-    """Create a mock restaurant in the database"""
+    """Create a mock restaurant data structure"""
     restaurant_data = {
         "_id": ObjectId(),
         "name": "Test Restaurant",
@@ -56,7 +56,7 @@ def mock_restaurant_data():
 
 @pytest.fixture
 async def setup_test_data(mock_user_data, mock_other_user_data, mock_restaurant_data):
-    """Setup test data in database"""
+    """Setup test data in mock database"""
     # Insert users
     await db.users.insert_one(mock_user_data)
     await db.users.insert_one(mock_other_user_data)
@@ -78,61 +78,61 @@ async def setup_test_data(mock_user_data, mock_other_user_data, mock_restaurant_
 
 @pytest.fixture
 async def create_test_order(setup_test_data):
-    """Create a test order in the database"""
-    test_data = await setup_test_data.__anext__()
-    
-    order_data = {
-        "_id": ObjectId(),
-        "customer_id": str(test_data["user"]["_id"]),
-        "restaurant_id": str(test_data["restaurant"]["_id"]),
-        "items": [{"menu_item_id": "item1", "quantity": 2, "price": 100}],
-        "subtotal": 200.0,
-        "delivery_fee": 50.0,
-        "discount": 0.0,
-        "total": 250.0,
-        "status": "paid",
-        "order_status": "preparing",
-        "delivery_address": "123 Test St",
-        "delivery_phone": "1234567890",
-        "payment_method": "card",
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
-    }
-    
-    await db.orders.insert_one(order_data)
-    
-    yield order_data
-    
-    # Cleanup
-    await db.orders.delete_one({"_id": order_data["_id"]})
+    """Create a test order in the mock database"""
+    async for test_data in setup_test_data:
+        order_data = {
+            "_id": ObjectId(),
+            "customer_id": str(test_data["user"]["_id"]),
+            "restaurant_id": str(test_data["restaurant"]["_id"]),
+            "items": [{"menu_item_id": "item1", "quantity": 2, "price": 100}],
+            "subtotal": 200.0,
+            "delivery_fee": 50.0,
+            "discount": 0.0,
+            "total": 250.0,
+            "status": "paid",
+            "order_status": "preparing",
+            "delivery_address": "123 Test St",
+            "delivery_phone": "1234567890",
+            "payment_method": "card",
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        await db.orders.insert_one(order_data)
+        
+        yield order_data
+        
+        # Cleanup
+        await db.orders.delete_one({"_id": order_data["_id"]})
 
 
 @pytest.mark.asyncio
 async def test_cancel_order_endpoint_success(create_test_order, mock_user_data):
     """Test successful order cancellation via API endpoint"""
-    order = await create_test_order.__anext__()
-    order_id = str(order["_id"])
-    
-    # Mock the authentication dependency
-    def override_get_current_user():
-        return mock_user_data
-    
-    app.dependency_overrides[get_current_user_http] = override_get_current_user
-    
-    try:
-        response = client.post(f"/api/orders/{order_id}/cancel")
+    async for order in create_test_order:
+        order_id = str(order["_id"])
         
-        assert response.status_code == 200
-        assert response.json()["message"] == "Order cancelled successfully"
-        assert response.json()["status"] == "cancelled"
+        # Mock the authentication dependency
+        def override_get_current_user():
+            return mock_user_data
         
-        # Verify order was updated in database
-        updated_order = await db.orders.find_one({"_id": ObjectId(order_id)})
-        assert updated_order["status"] == "cancelled"
-        assert "cancelled_at" in updated_order
-        assert "updated_at" in updated_order
-    finally:
-        app.dependency_overrides.clear()
+        app.dependency_overrides[get_current_user_http] = override_get_current_user
+        
+        try:
+            response = client.post(f"/api/orders/{order_id}/cancel")
+            
+            assert response.status_code == 200
+            assert response.json()["message"] == "Order cancelled successfully"
+            assert response.json()["status"] == "cancelled"
+            
+            # Verify order was updated in database
+            updated_order = await db.orders.find_one({"_id": ObjectId(order_id)})
+            assert updated_order is not None
+            assert updated_order["status"] == "cancelled"
+            assert "cancelled_at" in updated_order
+            assert "updated_at" in updated_order
+        finally:
+            app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
@@ -157,21 +157,21 @@ async def test_cancel_order_endpoint_not_found(mock_user_data):
 @pytest.mark.asyncio
 async def test_cancel_order_endpoint_unauthorized(create_test_order, mock_other_user_data):
     """Test cancellation endpoint when user doesn't own the order"""
-    order = await create_test_order.__anext__()
-    order_id = str(order["_id"])
-    
-    def override_get_current_user():
-        return mock_other_user_data
-    
-    app.dependency_overrides[get_current_user_http] = override_get_current_user
-    
-    try:
-        response = client.post(f"/api/orders/{order_id}/cancel")
+    async for order in create_test_order:
+        order_id = str(order["_id"])
         
-        assert response.status_code == 403
-        assert "Not authorized" in response.json()["detail"]
-    finally:
-        app.dependency_overrides.clear()
+        def override_get_current_user():
+            return mock_other_user_data
+        
+        app.dependency_overrides[get_current_user_http] = override_get_current_user
+        
+        try:
+            response = client.post(f"/api/orders/{order_id}/cancel")
+            
+            assert response.status_code == 403
+            assert "Not authorized" in response.json()["detail"]
+        finally:
+            app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
@@ -274,6 +274,7 @@ async def test_cancel_order_endpoint_all_cancellable_statuses(mock_user_data, mo
             
             # Verify in database
             updated_order = await db.orders.find_one({"_id": ObjectId(order_id)})
+            assert updated_order is not None
             assert updated_order["status"] == "cancelled"
         finally:
             app.dependency_overrides.clear()
